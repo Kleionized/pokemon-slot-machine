@@ -51,6 +51,7 @@ export class WheelComponent implements OnChanges {
   private reel2FinalOffset = 0;
   private reel3FinalOffset = 0;
   private lastClickedSegment = -1;
+  private resultEmitted = false;
 
   constructor(
     private darkModeService: DarkModeService,
@@ -123,6 +124,7 @@ export class WheelComponent implements OnChanges {
     }
 
     this.spinning = true;
+    this.resultEmitted = false;
     this.gameStateService.setWheelSpinning(this.spinning);
     this.lastClickedSegment = -1;
 
@@ -158,10 +160,10 @@ export class WheelComponent implements OnChanges {
     this.reel2FinalOffset = -(r2WinIdx * this.itemHeight) + windowCenter;
     this.reel3FinalOffset = -(r3WinIdx * this.itemHeight) + windowCenter;
 
-    // Staggered stop times for dramatic effect
-    this.reel1Duration = 1500 + Math.random() * 500;
-    this.reel2Duration = 2200 + Math.random() * 500;
-    this.reel3Duration = 3000 + Math.random() * 500;
+    // Staggered stop times - fixed pace for consistency
+    this.reel1Duration = 1500;
+    this.reel2Duration = 2200;
+    this.reel3Duration = 3000;
 
     this.startTime = performance.now();
     requestAnimationFrame(this.animate.bind(this));
@@ -191,10 +193,14 @@ export class WheelComponent implements OnChanges {
 
     if (elapsed < this.reel3Duration) {
       requestAnimationFrame(this.animate.bind(this));
-    } else {
-      this.spinning = false;
-      this.gameStateService.setWheelSpinning(false);
-      this.selectedItemEvent.emit(this.winningNumber);
+    } else if (!this.resultEmitted) {
+      this.resultEmitted = true;
+      // Wait 500ms after reels stop before emitting result
+      setTimeout(() => {
+        this.spinning = false;
+        this.gameStateService.setWheelSpinning(false);
+        this.selectedItemEvent.emit(this.winningNumber);
+      }, 500);
     }
   }
 

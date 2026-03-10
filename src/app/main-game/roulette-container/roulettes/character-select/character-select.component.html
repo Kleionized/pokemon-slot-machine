@@ -3,20 +3,18 @@
 <div class="trainer-gender row">
     <div class="d-none d-sm-block col-2"></div>
     <div class="col-6 col-sm-3">
-        <a class="rounded-3"
-             [ngClass]="(darkMode | async) ? 'border white-shadow text-white' : 'black-border shadow text-black'"
+        <a class="trainer-option"
              (click)="selectTrainerGender('male')">
             <img [src]="boySprite" alt="Boy" height="160">
-            <p class="ms-2">{{ 'game.main.roulette.character.boy' | translate }}</p>
+            <p>{{ 'game.main.roulette.character.boy' | translate }}</p>
         </a>
     </div>
     <div class="d-none d-sm-block col-2"></div>
     <div class="col-6 col-sm-3">
-        <a class="rounded-3"
-             [ngClass]="(darkMode | async) ? 'border white-shadow text-white' : 'black-border shadow text-black'"
+        <a class="trainer-option"
              (click)="selectTrainerGender('female')">
             <img [src]="girlSprite" alt="Girl" height="160">
-            <p class="me-2">{{ 'game.main.roulette.character.girl' | translate }}</p>
+            <p>{{ 'game.main.roulette.character.girl' | translate }}</p>
         </a>
     </div>
 </div>

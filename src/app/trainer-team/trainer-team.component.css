@@ -75,7 +75,9 @@
     white-space: pre-line;
     background: linear-gradient(135deg, #1a1a2e, #16213e);
     border: 1px solid rgba(255, 203, 5, 0.3);
-    border-radius: 10px;
-    padding: 8px 12px;
-    font-size: 10px;
+    border-radius: 12px;
+    padding: 12px 16px;
+    font-size: 14px;
+    line-height: 1.6;
+    max-width: 280px;
 }
