@@ -8,21 +8,23 @@ import { BadgesComponent } from "./badges/badges.component";
 import { Badge } from '../interfaces/badge';
 import { TrainerService } from '../services/trainer-service/trainer.service';
 import { StoragePcComponent } from "./storage-pc/storage-pc.component";
-import {TranslatePipe} from '@ngx-translate/core';
+import {TranslateService} from '@ngx-translate/core';
+import { buildPokemonTooltip } from '../utils/pokemon-tooltip';
 
 @Component({
   selector: 'app-trainer-team',
   imports: [CommonModule,
     NgbTooltipModule,
     BadgesComponent,
-    StoragePcComponent, TranslatePipe],
+    StoragePcComponent],
   templateUrl: './trainer-team.component.html',
   styleUrls: ['./trainer-team.component.css']
 })
 export class TrainerTeamComponent implements OnInit, OnDestroy {
 
   constructor(private trainerService: TrainerService,
-              private darkModeService: DarkModeService) { }
+              private darkModeService: DarkModeService,
+              private translateService: TranslateService) { }
 
   trainer!: { sprite: string; };
   trainerTeam!: PokemonItem[];
@@ -58,5 +60,9 @@ export class TrainerTeamComponent implements OnInit, OnDestroy {
       return pokemon.sprite?.front_shiny || 'place-holder-pixel.png';
     }
     return pokemon.sprite?.front_default || 'place-holder-pixel.png';
+  }
+
+  getPokemonTooltip(pokemon: PokemonItem): string {
+    return buildPokemonTooltip(pokemon, key => this.translateService.instant(key));
   }
 }

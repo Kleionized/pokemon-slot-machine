@@ -30,6 +30,7 @@ export class GameStateService {
       'elite-four-battle',
       'elite-four-battle',
       'elite-four-preparation',
+      'legendary-encounter',
       'gym-battle',
       'adventure-continues',
       'gym-battle',
@@ -45,7 +46,7 @@ export class GameStateService {
       'gym-battle',
       'adventure-continues',
       'gym-battle',
-      'start-adventure',
+      'starter-companion-catch',
       'starter-pokemon',
       'character-select'
     ];

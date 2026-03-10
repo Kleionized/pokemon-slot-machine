@@ -1,25 +1,50 @@
-<h1 class="title">{{ 'game.main.roulette.elite.prep.title' | translate }}</h1>
-<p class="respin-reason">{{ respinReason | translate}}</p>
-<app-wheel  #wheel
-            [items]="actions"
-            (selectedItemEvent)="onItemSelected($event)">
-</app-wheel>
+<h1 class="title">Pokemart</h1>
+<p class="respin-reason">
+  You can reroll items a number of times equal to how many items you entered with.
+</p>
 
-<ng-template #victoryRoadModal let-modal>
+@if (hasItemsToReroll) {
+  <p class="respin-reason">Rerolls remaining: {{ rerollsRemaining }}</p>
+  <div class="pokemart-grid">
+    @for (item of trainerItems; track item) {
+      <button
+        type="button"
+        class="pokemart-card"
+        [disabled]="hasFinishedRerolls()"
+        (click)="rerollItem(item)">
+        <img [src]="item.sprite" [alt]="item.text | translate" height="96">
+        <span>{{ item.text | translate }}</span>
+      </button>
+    }
+  </div>
+  <div class="pokemart-empty">
+    <button type="button" class="btn btn-outline-primary" (click)="leavePokemart()">
+      {{ hasFinishedRerolls() ? 'Continue' : 'Finish Shopping' }}
+    </button>
+  </div>
+} @else {
+  <div class="pokemart-empty">
+    <p>No items to reroll.</p>
+    <button type="button" class="btn btn-outline-primary" (click)="leavePokemart()">Continue</button>
+  </div>
+}
+
+<ng-template #pokemartModal let-modal>
     <div class="modal-body">
-        <h1>{{ 'game.main.roulette.elite.prep.victoryRoad' | translate }}</h1>
+        <h1>Pokemart</h1>
         <div class="info-panel">
             <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/494.png"
-                 alt="Good Luck!"
+                 alt="Pokemart"
                  height="128">
             <div class="dialog">
-                <p>{{ 'game.main.roulette.elite.prep.congrats' | translate }}</p>
-                <p>{{ 'game.main.roulette.elite.prep.defeated' | translate }}</p>
-                <p>{{ 'game.main.roulette.elite.prep.ready' | translate }}</p>
+                <p>You made it through the gyms.</p>
+                <p>Before the Elite Four, visit the Pokemart.</p>
+                <p>You may reroll items up to the number of items you currently own.</p>
+                <p>Each reroll swaps the selected item for a different random item.</p>
             </div>
         </div>
     </div>
     <div class="modal-footer">
-        <button type="button" class="btn btn-outline-primary" (click)="closeModal()">{{ 'game.main.roulette.elite.prep.go' | translate }}</button>
+        <button type="button" class="btn btn-outline-primary" (click)="closeModal()">Browse</button>
     </div>
 </ng-template>

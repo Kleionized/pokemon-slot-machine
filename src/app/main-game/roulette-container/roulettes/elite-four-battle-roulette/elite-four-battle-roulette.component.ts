@@ -130,12 +130,9 @@ export class EliteFourBattleRouletteComponent implements OnInit, OnDestroy {
       yesOdds.push({ text: "game.main.roulette.elite.yes", fillStyle: "green", weight: 1 });
     }
 
-    for (let index = 0; index < this.currentRound; index++) {
+    for (let index = 0; index < this.getEliteDifficulty(); index++) {
       noOdds.push({ text: "game.main.roulette.elite.no", fillStyle: "crimson", weight: 1 });
     }
-    // elite four battles should be harder, so it starts with 2 noOdds
-    noOdds.push({ text: "game.main.roulette.elite.no", fillStyle: "crimson", weight: 1 });
-    noOdds.push({ text: "game.main.roulette.elite.no", fillStyle: "crimson", weight: 1 });
 
     this.victoryOdds = interleaveOdds(yesOdds, noOdds);
   }
@@ -149,6 +146,10 @@ export class EliteFourBattleRouletteComponent implements OnInit, OnDestroy {
     });
 
     return power;
+  }
+
+  private getEliteDifficulty(): number {
+    return Math.ceil((this.currentRound + 1) * 1.75) + 2;
   }
 
   private getCurrentElite(): void {

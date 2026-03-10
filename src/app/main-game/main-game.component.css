@@ -1,11 +1,67 @@
 .game-container {
-	width: 100%;
+    width: 100%;
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 1rem;
+    min-height: 100vh;
 }
 
-.map-container {
-	flex-shrink: 0;
-	/* Prevents it from shrinking */
-	background: #222;
-	/* Optional: Background for better visibility */
-	padding: 16px;
+.game-header {
+    display: flex;
+    justify-content: center;
+    padding: 0.75rem 0;
+    margin-bottom: 1rem;
+}
+
+.header-actions {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    padding: 0.5rem 1.5rem;
+    border-radius: 50px;
+    background: rgba(0, 0, 0, 0.08);
+    backdrop-filter: blur(10px);
+}
+
+:host-context(body.dark-mode) .header-actions {
+    background: rgba(255, 255, 255, 0.06);
+}
+
+.game-content {
+    display: flex;
+    gap: 1.5rem;
+    align-items: flex-start;
+}
+
+.slot-panel {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    justify-content: center;
+}
+
+.trainer-panel {
+    width: 380px;
+    flex-shrink: 0;
+}
+
+@media (max-width: 768px) {
+    .game-container {
+        padding: 0.5rem;
+    }
+
+    .game-content {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .trainer-panel {
+        width: 100%;
+    }
+
+    .header-actions {
+        padding: 0.4rem 1rem;
+    }
 }

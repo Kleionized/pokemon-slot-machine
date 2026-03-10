@@ -6,6 +6,42 @@
 	text-align: center;
 }
 
+.pokemart-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+	gap: 12px;
+}
+
+.pokemart-card {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 8px;
+	padding: 12px;
+	border: 1px solid #333;
+	border-radius: 8px;
+	background: rgba(255, 255, 255, 0.85);
+	cursor: pointer;
+	transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.pokemart-card:hover {
+	transform: translateY(-2px);
+	box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18);
+}
+
+.pokemart-card span {
+	text-align: center;
+	font-weight: 600;
+}
+
+.pokemart-empty {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 12px;
+}
+
 
 .modal-body {
 	color: black;

@@ -1,20 +1,56 @@
-<div class="wheel-container">
-    <p>{{ currentSegment | translate }}</p>
-    <div class="canvas-container">
-        <canvas id="wheel"
-                [width]="wheelWidth"
-                [height]="canvasHeight"
-                (click)="spinWheel()">
-        </canvas>
-        <canvas id="pointer"
-                [width]="cursorWidth"
-                [height]="canvasHeight">
-        </canvas>
+<div class="slot-machine-container">
+    <p class="current-segment">{{ currentSegment | translate }}</p>
+    <div class="slot-machine" [class.dark]="(darkMode | async)">
+        <div class="slot-frame">
+            <div class="slot-decorations">
+                <div class="pokeball-decoration left"></div>
+                <div class="pokeball-decoration right"></div>
+            </div>
+            <div class="slot-reels">
+                <div class="reel-wrapper">
+                    <div class="reel-window">
+                        <div class="reel-strip" [style.transform]="'translateY(' + reel1Offset + 'px)'">
+                            @for (item of reelItems; track $index) {
+                                <div class="reel-item" [style.background-color]="item.fillStyle">
+                                    <span>{{ item.translatedText }}</span>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+                <div class="reel-divider"></div>
+                <div class="reel-wrapper">
+                    <div class="reel-window">
+                        <div class="reel-strip" [style.transform]="'translateY(' + reel2Offset + 'px)'">
+                            @for (item of reel2Items; track $index) {
+                                <div class="reel-item" [style.background-color]="item.fillStyle">
+                                    <span>{{ item.translatedText }}</span>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+                <div class="reel-divider"></div>
+                <div class="reel-wrapper">
+                    <div class="reel-window">
+                        <div class="reel-strip" [style.transform]="'translateY(' + reel3Offset + 'px)'">
+                            @for (item of reel3Items; track $index) {
+                                <div class="reel-item" [style.background-color]="item.fillStyle">
+                                    <span>{{ item.translatedText }}</span>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="win-line"></div>
+        </div>
     </div>
-    <button class="btn my-3"
-            [ngClass]="(darkMode | async) ? 'btn-light' : 'btn-dark'"
+    <button class="slot-lever-btn"
+            [class.dark]="(darkMode | async)"
+            [class.spinning]="spinning"
             (click)="spinWheel()">
-            {{ 'wheel.spin' | translate }}
+        <span class="lever-icon">&#9654;</span>
+        {{ 'wheel.spin' | translate }}
     </button>
 </div>
-

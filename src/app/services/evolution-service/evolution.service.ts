@@ -10,13 +10,19 @@ export class EvolutionService {
 
   constructor(private pokemonService: PokemonService) {
     this.nationalDexPokemon = this.pokemonService.getAllPokemon();
+    this.evolvedPokemonIds = new Set(Object.values(this.evolutionChain).flat());
   }
 
   evolutionChain = evolutionChain;
+  evolvedPokemonIds: Set<number>;
   nationalDexPokemon: PokemonItem[];
 
   canEvolve(pokemon: PokemonItem): boolean {
     return !!this.evolutionChain[pokemon.pokemonId];
+  }
+
+  isBaseEvolution(pokemon: PokemonItem): boolean {
+    return this.canEvolve(pokemon) && !this.evolvedPokemonIds.has(pokemon.pokemonId);
   }
 
   getEvolutions(pokemon: PokemonItem): PokemonItem[] {

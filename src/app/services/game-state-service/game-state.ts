@@ -2,6 +2,7 @@ export type GameState =
   | 'game-start'
   | 'character-select'
   | 'starter-pokemon'
+  | 'starter-companion-catch'
   | 'check-shininess'
   | 'start-adventure'
   | 'catch-pokemon'

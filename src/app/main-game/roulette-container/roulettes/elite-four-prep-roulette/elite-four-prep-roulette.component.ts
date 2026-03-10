@@ -1,28 +1,27 @@
+import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, Input, OnInit, Output, TemplateRef, ViewChild } from '@angular/core';
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import {TranslatePipe} from '@ngx-translate/core';
-import { WheelComponent } from '../../../../wheel/wheel.component';
-import { WheelItem } from '../../../../interfaces/wheel-item';
 import { EventSource } from '../../../EventSource';
+import { ItemItem } from '../../../../interfaces/item-item';
+import { ItemsService } from '../../../../services/items-service/items.service';
+import { TrainerService } from '../../../../services/trainer-service/trainer.service';
 
 @Component({
   selector: 'app-elite-four-prep-roulette',
-  imports: [WheelComponent, TranslatePipe],
+  imports: [CommonModule, TranslatePipe],
   templateUrl: './elite-four-prep-roulette.component.html',
   styleUrl: './elite-four-prep-roulette.component.css'
 })
 export class EliteFourPrepRouletteComponent implements OnInit {
 
-  constructor(private modalService: NgbModal) { }
+  constructor(
+    private itemsService: ItemsService,
+    private modalService: NgbModal,
+    private trainerService: TrainerService
+  ) { }
 
-  @ViewChild('victoryRoadModal', { static: true }) victoryRoadModal!: TemplateRef<any>;
-
-  ngOnInit(): void {
-    this.modalService.open(this.victoryRoadModal, {
-      centered: true,
-      size: 'lg'
-    });
-  }
+  @ViewChild('pokemartModal', { static: true }) pokemartModal!: TemplateRef<any>;
 
   @Input() respinReason!: string;
   @Output() catchPokemonEvent = new EventEmitter<void>();
@@ -34,49 +33,45 @@ export class EliteFourPrepRouletteComponent implements OnInit {
   @Output() doNothingEvent = new EventEmitter<void>();
   @Output() teamRocketEncounterEvent = new EventEmitter<void>();
 
-  actions: WheelItem[] = [
-    { text: 'game.main.roulette.elite.prep.actions.catchPokemon', fillStyle: 'crimson', weight: 2 },
-    { text: 'game.main.roulette.elite.prep.actions.trainingArc', fillStyle: 'darkorange', weight: 2 },
-    { text: 'game.main.roulette.elite.prep.actions.buyPotions', fillStyle: 'darkgoldenrod', weight: 2 },
-    { text: 'game.main.roulette.elite.prep.actions.catchTwoPokemon', fillStyle: 'green', weight: 2 },
-    { text: 'game.main.roulette.elite.prep.actions.huntLegendary', fillStyle: 'darkcyan', weight: 2 },
-    { text: 'game.main.roulette.elite.prep.actions.findItem', fillStyle: 'blue', weight: 2 },
-    { text: 'game.main.roulette.elite.prep.actions.goStraight', fillStyle: 'purple', weight: 1 },
-    { text: 'game.main.roulette.elite.prep.actions.teamRocket', fillStyle: 'black', weight: 1 }
-  ];
+  trainerItems: ItemItem[] = [];
+  rerollsRemaining = 0;
 
-  onItemSelected(index: number): void {
-    switch (index) {
-      case 0:
-        this.catchPokemonEvent.emit();
-        break;
-      case 1:
-        this.battleTrainerEvent.emit('battle-trainer');
-        break;
-      case 2:
-        this.buyPotionsEvent.emit();
-        break;
-      case 3:
-        this.catchTwoPokemonEvent.emit();
-        break;
-      case 4:
-        this.legendaryEncounterEvent.emit();
-        break;
-      case 5:
-        this.findItemEvent.emit();
-        break;
-      case 6:
-        this.doNothingEvent.emit();
-        break;
-      case 7:
-        this.teamRocketEncounterEvent.emit();
-        break;
-      default:
-        break;
+  rerollItem(item: ItemItem): void {
+    if (this.rerollsRemaining <= 0) {
+      return;
     }
+
+    const rerollPool = this.itemsService.getAllItems().filter(candidate => candidate.name !== item.name);
+    const replacement = rerollPool[Math.floor(Math.random() * rerollPool.length)];
+
+    this.trainerService.removeItem(item);
+    this.trainerService.addToItems(replacement);
+    this.rerollsRemaining--;
+  }
+
+  leavePokemart(): void {
+    this.closeModal();
+    this.doNothingEvent.emit();
+  }
+
+  hasFinishedRerolls(): boolean {
+    return this.trainerItems.length === 0 || this.rerollsRemaining <= 0;
   }
 
   closeModal(): void {
     this.modalService.dismissAll();
+  }
+
+  get hasItemsToReroll(): boolean {
+    return this.trainerItems.length > 0;
+  }
+
+  ngOnInit(): void {
+    this.trainerItems = this.trainerService.getItems();
+    this.rerollsRemaining = this.trainerItems.length;
+    this.modalService.open(this.pokemartModal, {
+      centered: true,
+      size: 'lg'
+    });
   }
 }

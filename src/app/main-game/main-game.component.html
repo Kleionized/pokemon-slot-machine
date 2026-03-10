@@ -1,36 +1,19 @@
 <div class="game-container">
-    <div class="row">
-        <div class="extra-options col-12 col-sm-3 d-flex flex-column">
-            <div class="row col-12 col-sm-7 py-2">
-                <div class="col-6 col-sm-12 mb-2">
-                    <app-settings-button></app-settings-button>
-                </div>
-                <div class="col-6 col-sm-12 mb-2">
-                    <app-coffee-button></app-coffee-button>
-                </div>
-                <div class="col-6 col-sm-12 mb-2">
-                    <app-restart-game-buttom (restartEvent)="resetGameAction()"></app-restart-game-buttom>
-                </div>
-                <div class="col-6 col-sm-12 mb-2">
-                    <app-language-selector></app-language-selector>
-                </div>
-            </div>
-                <!-- <button type="button"
-                        class="btn me-sm-auto"
-                        (click)="mapIsCollapsed = !mapIsCollapsed"
-                        [attr.aria-expanded]="!mapIsCollapsed"
-                        aria-controls="townMapCollapse"
-                        [ngClass]="(darkMode | async) ? 'btn-outline-light' : 'btn-outline-dark'">
-                    <ng-icon name="bootstrapMap"></ng-icon> Town Map
-                </button> -->
+    <div class="game-header">
+        <div class="header-actions">
+            <app-settings-button></app-settings-button>
+            <app-coffee-button></app-coffee-button>
+            <app-restart-game-buttom (restartEvent)="resetGameAction()"></app-restart-game-buttom>
+            <app-language-selector></app-language-selector>
         </div>
-        <div class="main-game col-12 col-sm-5">
-            <app-roulette-container 
+    </div>
+    <div class="game-content">
+        <div class="slot-panel">
+            <app-roulette-container
                 (resetGameEvent)="resetGame()">
             </app-roulette-container>
         </div>
-
-        <div class="trainer-info col-12 col-sm-4">
+        <div class="trainer-panel">
             <div class="trainer-team">
                 <app-trainer-team></app-trainer-team>
             </div>
@@ -40,7 +23,3 @@
         </div>
     </div>
 </div>
-
-
-
-

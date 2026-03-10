@@ -35,16 +35,7 @@ export class TrainerService {
   private trainerTeamObservable = new BehaviorSubject<PokemonItem[]>(this.trainerTeam);
   private lastAddedPokemon: PokemonItem | null = null;
 
-  trainerItems: ItemItem[] = [
-    {
-      text: 'items.potion.name',
-      name: 'potion',
-      sprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/potion.png',
-      fillStyle: 'purple',
-      weight: 1,
-      description: 'items.potion.description'
-    },
-  ];
+  trainerItems: ItemItem[] = [];
   private trainerItemsObservable = new BehaviorSubject<ItemItem[]>(this.trainerItems);
 
   trainerBadges: Badge[] = [];
@@ -64,9 +55,21 @@ export class TrainerService {
     this.trainer.next({ sprite: this.getTrainerSprite(generation, gender) });
   }
 
-  addToTeam(pokemon: PokemonItem): void {
+  private hydratePokemon(pokemon: PokemonItem): PokemonItem {
+    const dexPokemon = this.pokemonService.getPokemonById(pokemon.pokemonId);
+    const hydratedPokemon = {
+      ...(dexPokemon ? structuredClone(dexPokemon) : {}),
+      ...structuredClone(pokemon)
+    } as PokemonItem;
 
-    pokemon = structuredClone(pokemon);
+    hydratedPokemon.sprite = pokemon.sprite ?? dexPokemon?.sprite ?? null;
+    hydratedPokemon.shiny = pokemon.shiny;
+
+    return hydratedPokemon;
+  }
+
+  addToTeam(pokemon: PokemonItem): void {
+    pokemon = this.hydratePokemon(pokemon);
 
     if (!pokemon.sprite) {
       this.pokemonService.getPokemonSprites(pokemon.pokemonId).subscribe(response => {
@@ -138,8 +141,8 @@ export class TrainerService {
   }
 
   replaceForEvolution(pokemonOut: PokemonItem, pokemonIn: PokemonItem): void {
+    pokemonIn = this.hydratePokemon(pokemonIn);
     pokemonIn.shiny = pokemonOut.shiny;
-    pokemonIn = pokemonIn;
 
     if (!pokemonIn.sprite) {
       this.pokemonService.getPokemonSprites(pokemonIn.pokemonId).subscribe(response => {
@@ -162,6 +165,8 @@ export class TrainerService {
   }
 
   performTrade(pokemonOut: PokemonItem, pokemonIn: PokemonItem): void {
+    pokemonIn = this.hydratePokemon(pokemonIn);
+
     if (!pokemonIn.sprite) {
       this.pokemonService.getPokemonSprites(pokemonIn.pokemonId).subscribe(response => {
         pokemonIn.sprite = response.sprite;
@@ -239,16 +244,7 @@ export class TrainerService {
   }
 
   resetItems() {
-    this.trainerItems = [
-      {
-        text: 'items.potion.name',
-        name: 'potion',
-        sprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/potion.png',
-        fillStyle: 'purple',
-        weight: 1,
-        description: 'items.potion.description'
-      }
-    ];
+    this.trainerItems = [];
     this.trainerItemsObservable.next(this.trainerItems);
   }
 
@@ -257,4 +253,3 @@ export class TrainerService {
     this.trainerBadgesObservable.next(this.trainerBadges);
   }
 }
-

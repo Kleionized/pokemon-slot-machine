@@ -16,6 +16,9 @@
           [cdkDropListEnterPredicate]="teamIsFullPredicate">
           @for (pokemon of trainerTeam; track pokemon) {
             <div  class="pokemon-storage-card shadow"
+                  placement="bottom"
+                  [ngbTooltip]="getPokemonTooltip(pokemon)"
+                  tooltipClass="pokemon-meta-tooltip"
                   cdkDrag>
               <img class="img-fluid" [src]="getSprite(pokemon)">
             </div>
@@ -31,6 +34,9 @@
           [cdkDropListEnterPredicate]="lastPokemonPredicate">
       @for (pokemon of storedPokemon; track pokemon) {
         <div  class="pokemon-storage-card shadow"
+              placement="bottom"
+              [ngbTooltip]="getPokemonTooltip(pokemon)"
+              tooltipClass="pokemon-meta-tooltip"
               [cdkDragData]="pokemon"
               cdkDrag>
           <img [src]="getSprite(pokemon)" class="img-fluid">

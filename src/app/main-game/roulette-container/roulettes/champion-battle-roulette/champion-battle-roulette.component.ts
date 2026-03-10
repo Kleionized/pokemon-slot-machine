@@ -130,13 +130,9 @@ export class ChampionBattleRouletteComponent implements OnInit, OnDestroy {
       yesOdds.push({ text: "game.main.roulette.champion.yes", fillStyle: "green", weight: 1 });
     }
 
-    for (let index = 0; index < this.currentRound; index++) {
+    for (let index = 0; index < this.getChampionDifficulty(); index++) {
       noOdds.push({ text: "game.main.roulette.champion.no", fillStyle: "crimson", weight: 1 });
     }
-    // Champion battles should be the toughtest, so it starts with 3 noOdds
-    noOdds.push({ text: "game.main.roulette.champion.no", fillStyle: "crimson", weight: 1 });
-    noOdds.push({ text: "game.main.roulette.champion.no", fillStyle: "crimson", weight: 1 });
-    noOdds.push({ text: "game.main.roulette.champion.no", fillStyle: "crimson", weight: 1 });
 
     this.victoryOdds = interleaveOdds(yesOdds, noOdds);
   }
@@ -150,6 +146,10 @@ export class ChampionBattleRouletteComponent implements OnInit, OnDestroy {
     });
 
     return power;
+  }
+
+  private getChampionDifficulty(): number {
+    return Math.ceil((this.currentRound + 1) * 2.25) + 4;
   }
 
   private getCurrentChampion(): void {

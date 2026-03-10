@@ -1,52 +1,67 @@
 .title {
-	text-align: center;
+    text-align: center;
 }
 
 .respin-reason {
-	text-align: center;
+    text-align: center;
+    font-size: 0.8rem;
+    opacity: 0.7;
 }
 
 .modal-body {
-	color: black;
-	text-align: center;
+    color: #2d3436;
+    text-align: center;
+}
+
+.modal-body h1 {
+    font-size: 1rem;
+    background: linear-gradient(135deg, #3b4cca, #ff1744);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
 }
 
 .modal-body p {
-	font-size: medium;
+    font-size: medium;
 }
 
 .leader-panel {
-	display: flex;
-	flex-direction: row;
-	align-items: center;
-	justify-content: center;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+}
+
+.leader-panel img {
+    border-radius: 12px;
+    background: linear-gradient(135deg, rgba(255, 203, 5, 0.1), rgba(59, 76, 202, 0.1));
+    padding: 4px;
 }
 
 .item-panel {
-	display: flex;
-	flex-direction: row;
-	align-items: center;
-	justify-content: center;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
 }
 
 .quotes {
-	text-align: start;
-	cursor: default;
-	font-size: 8.6px;
-	border-radius: 2px;
-	padding: 8px;
-	position: relative;
-	line-height: 16px;
-	background: white;
-	border: 1px solid white;
-	box-shadow: 0 1px 0 1px black,
-		inset 0 1px 0 1px black,
-		0 0 0 1px black,
-		inset 0 0 0 1px black;
-	user-select: none;
-	max-width: 50%;
+    text-align: start;
+    cursor: default;
+    font-size: 8.6px;
+    border-radius: 12px;
+    padding: 12px;
+    position: relative;
+    line-height: 16px;
+    background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+    border: 2px solid rgba(59, 76, 202, 0.2);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    user-select: none;
+    max-width: 50%;
 }
 
 .modal-footer {
-	justify-content: center;
+    justify-content: center;
 }

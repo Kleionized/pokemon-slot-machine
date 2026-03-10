@@ -7,7 +7,7 @@
 }
 
 .modal-body {
-    color: black;
+    color: #2d3436;
     text-align: center;
 }
 
@@ -19,24 +19,22 @@
     display: flex;
     flex-direction: row;
     align-items: center;
-	justify-content: center;
+    justify-content: center;
+    gap: 1rem;
 }
 
 .message {
     text-align: start;
-	cursor: default;
-	font-size: 8.6px;
-	font-family: "Pokemon GB", Monospace, sans-serif;
-	border-radius: 2px;
-	padding: 8px;
-	position: relative;
-	line-height: 16px;
-	background: white;
-	border: 1px solid white;
-	box-shadow: 0 1px 0 1px black,
-			  inset 0 1px 0 1px black,
-			  0 0 0 1px black,
-			  inset 0 0 0 1px black;
-	user-select: none;
-	max-width: 50%;
+    cursor: default;
+    font-size: 8.6px;
+    font-family: "Pokemon GB", Monospace, sans-serif;
+    border-radius: 12px;
+    padding: 12px;
+    position: relative;
+    line-height: 16px;
+    background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+    border: 2px solid rgba(59, 76, 202, 0.2);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    user-select: none;
+    max-width: 50%;
 }

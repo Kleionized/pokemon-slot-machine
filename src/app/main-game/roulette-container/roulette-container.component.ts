@@ -44,6 +44,7 @@ import { ChampionBattleRouletteComponent } from "./roulettes/champion-battle-rou
 import { EndGameComponent } from "../end-game/end-game.component";
 import { GameOverComponent } from "../game-over/game-over.component";
 import { ModalQueueService } from '../../services/modal-queue-service/modal-queue.service';
+import { StarterCompanionRouletteComponent } from "./roulettes/starter-companion-roulette/starter-companion-roulette.component";
 
 @Component({
   selector: 'app-roulette-container',
@@ -55,6 +56,7 @@ import { ModalQueueService } from '../../services/modal-queue-service/modal-queu
     StarterRouletteComponent,
     ShinyRouletteComponent,
     StartAdventureRouletteComponent,
+    StarterCompanionRouletteComponent,
     PokemonFromGenerationRouletteComponent,
     PokemonFromAuxListRouletteComponent,
     GymBattleRouletteComponent,
@@ -227,14 +229,14 @@ export class RouletteContainerComponent implements OnInit, OnDestroy {
     if (this.auxPokemonList.length === 0) {
       switch (eventSource) {
         case 'gym-battle':
-          this.altPrizeText = 'game.main.altPrizes.gymBattle.potion';
-          this.altPrizeSprite = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/potion.png';
-          this.altPrizeDescription = 'game.main.altPrizes.gymBattle.potionDesc';
+          this.altPrizeText = 'items.rare-candy.name';
+          this.altPrizeSprite = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/rare-candy.png';
+          this.altPrizeDescription = 'items.rare-candy.description';
           this.modalQueueService.open(this.altPrizeModal, {
             centered: true,
             size: 'md'
           });
-          return this.buyPotions();
+          return this.receiveRewardItem('rare-candy');
           break;
         case 'visit-daycare':
             this.altPrizeText = 'game.main.altPrizes.visitDaycare.egg';
@@ -320,6 +322,16 @@ export class RouletteContainerComponent implements OnInit, OnDestroy {
     this.finishCurrentState();
   }
 
+  receiveRewardItem(itemName: ItemName, finishState: boolean = true, playAudio: boolean = true): void {
+    this.trainerService.addToItems(this.itemService.getItem(itemName));
+    if (playAudio) {
+      this.playItemFoundAudio();
+    }
+    if (finishState) {
+      this.finishCurrentState();
+    }
+  }
+
   doNothing(): void {
     this.finishCurrentState();
   }
@@ -387,10 +399,14 @@ export class RouletteContainerComponent implements OnInit, OnDestroy {
     this.respinReason = '';
 
     if (result) {
+      const clearedGyms = this.leadersDefeatedAmount + 1;
       this.playItemFoundAudio();
       this.trainerService.addBadge(this.leadersDefeatedAmount, this.fromLeader);
       this.gameStateService.advanceRound();
       this.gameStateService.setNextState('check-evolution');
+      if (this.shouldRewardPotionAfterGym(clearedGyms)) {
+        this.announceGymPotionReward();
+      }
 
     } else {
       this.gameStateService.setNextState('game-over');
@@ -675,6 +691,21 @@ export class RouletteContainerComponent implements OnInit, OnDestroy {
 
   private playItemFoundAudio(): void {
     this.audioService.playAudio(this.itemFoundAudio, 0.25);
+  }
+
+  private shouldRewardPotionAfterGym(clearedGyms: number): boolean {
+    return clearedGyms > 0 && clearedGyms % 2 === 0;
+  }
+
+  private announceGymPotionReward(): void {
+    this.altPrizeText = 'items.potion.name';
+    this.altPrizeSprite = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/potion.png';
+    this.altPrizeDescription = 'items.potion.description';
+    this.modalQueueService.open(this.altPrizeModal, {
+      centered: true,
+      size: 'md'
+    });
+    this.receiveRewardItem('potion', false, false);
   }
 
   private showpkmnEvoModal(): void {

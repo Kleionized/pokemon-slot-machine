@@ -1,4 +1,4 @@
-import { AfterViewInit, Component, EventEmitter, HostListener, Input, OnChanges, Output, SimpleChanges } from '@angular/core';
+import { Component, EventEmitter, HostListener, Input, OnChanges, Output, SimpleChanges } from '@angular/core';
 import { WheelItem } from '../interfaces/wheel-item';
 import { DarkModeService } from '../services/dark-mode-service/dark-mode.service';
 import { Observable } from 'rxjs';
@@ -7,6 +7,13 @@ import { GameStateService } from '../services/game-state-service/game-state.serv
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { AudioService } from '../services/audio-service/audio.service';
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
+
+interface ReelItem {
+  text: string;
+  translatedText: string;
+  fillStyle: string;
+  weight: number;
+}
 
 @Component({
   selector: 'app-wheel',
@@ -17,34 +24,33 @@ import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
   templateUrl: './wheel.component.html',
   styleUrl: './wheel.component.css'
 })
-export class WheelComponent implements AfterViewInit, OnChanges {
+export class WheelComponent implements OnChanges {
 
-  wheelCanvas!: HTMLCanvasElement;
-  wheelCtx!: CanvasRenderingContext2D;
-  pointerCanvas!: HTMLCanvasElement;
-  pointerCtx!: CanvasRenderingContext2D;
   @Input() items: WheelItem[] = [];
   @Output() selectedItemEvent = new EventEmitter<number>();
   spinning = false;
   darkMode!: Observable<boolean>;
 
-  canvasHeight: number;
-  wheelWidth: number;
-  cursorWidth: number;
-  fontSize: number;
-  currentRotation = 0;
-  startTime = 0;
-  totalRotations!: number;
-  duration = Math.floor(Math.random() * (5000 - 3000)) + 3000;
-  finalRotation = 0;
-  pointerStrokeColor = 'blue';
-  pointerFillColor = 'yellow';
-  winningNumber!: number;
+  reelItems: ReelItem[] = [];
+  reel2Items: ReelItem[] = [];
+  reel3Items: ReelItem[] = [];
+
+  reel1Offset = 0;
+  reel2Offset = 0;
+  reel3Offset = 0;
+
   currentSegment: string = '-';
   clickAudio!: HTMLAudioElement;
-
-  private translatedItems: WheelItem[] = [];
-  private readonly mobileBreakpoint = 768;
+  private itemHeight = 90;
+  private winningNumber!: number;
+  private startTime = 0;
+  private reel1Duration = 0;
+  private reel2Duration = 0;
+  private reel3Duration = 0;
+  private reel1FinalOffset = 0;
+  private reel2FinalOffset = 0;
+  private reel3FinalOffset = 0;
+  private lastClickedSegment = -1;
 
   constructor(
     private darkModeService: DarkModeService,
@@ -55,120 +61,60 @@ export class WheelComponent implements AfterViewInit, OnChanges {
   ) {
     this.clickAudio = this.audioService.createAudio('./click.mp3');
     this.darkMode = this.darkModeService.darkMode$;
-    this.canvasHeight = 0;
-    this.wheelWidth = 0;
-    this.cursorWidth = 40;
-    this.fontSize = 0;
-    this.updateWheelDimensions();
-  }
-
-  ngAfterViewInit(): void {
-    this.wheelCanvas = <HTMLCanvasElement>document.getElementById('wheel');
-    this.wheelCtx = this.wheelCanvas.getContext('2d')!;
-    this.pointerCanvas = <HTMLCanvasElement>document.getElementById('pointer');
-    this.pointerCtx = this.pointerCanvas.getContext('2d')!;
-
-    // Wait for translations to be ready
-    this.translateService.get('wheel.spin').subscribe(() => {
-      this.preprocessTranslations();
-      this.drawWheel();
-      this.drawPointer();
-    });
-  }
-
-  @HostListener('window:resize')
-  handleResize(): void {
-    this.updateWheelDimensions();
-
-    if (this.wheelCtx && this.pointerCtx) {
-      this.drawWheel(this.currentRotation);
-      this.drawPointer();
-    }
   }
 
   ngOnChanges(changes: SimpleChanges): void {
-    if (changes['items'] && !changes['items'].firstChange) {
+    if (changes['items']) {
       this.translateService.get('wheel.spin').subscribe(() => {
-        this.preprocessTranslations();
-        this.drawWheel();
-        this.drawPointer();
+        this.buildReels();
       });
     }
   }
 
-  private preprocessTranslations(): void {
-    this.translatedItems = this.items.map(item => ({
-      ...item,
-      text: this.translateService.instant(item.text)
+  private buildReels(): void {
+    const translated: ReelItem[] = this.items.map(item => ({
+      text: item.text,
+      translatedText: this.translateService.instant(item.text),
+      fillStyle: item.fillStyle,
+      weight: item.weight
     }));
-  }
 
-  private updateWheelDimensions(): void {
-    const viewportMin = Math.min(window.innerHeight, window.innerWidth);
-    const wheelScale = window.innerWidth <= this.mobileBreakpoint ? 0.64 : 0.50;
-
-    this.canvasHeight = viewportMin * wheelScale;
-    this.wheelWidth = this.canvasHeight;
-    this.fontSize = this.wheelWidth / 24;
-
-    if (this.items.length >= 32) {
-      this.fontSize = Math.min(this.fontSize, 10);
-    } else if (this.items.length >= 16) {
-      this.fontSize = Math.min(this.fontSize, 14);
-    }
-  }
-
-  private drawWheel(rotation = 0): void {
-    const centerX = this.wheelCanvas.width / 2;
-    const centerY = this.wheelCanvas.height / 2;
-    const radius = (this.wheelCanvas.width / 2);
-
-    const totalWeight = this.getTotalWeights();
-    const arcSize = (2 * Math.PI) / (totalWeight);
-    this.wheelCtx.clearRect(0, 0, this.wheelCanvas.width, this.wheelCanvas.height);
-
-    let startAngle = rotation;
-    for (let index = 0; index < this.translatedItems.length; index++) {
-      const item = this.translatedItems[index];
-      const segmentSize = arcSize * item.weight;
-      const endAngle = startAngle + segmentSize;
-
-      /** Draw the segment */
-      this.wheelCtx.beginPath();
-      this.wheelCtx.arc(centerX, centerY, radius, startAngle, endAngle);
-      this.wheelCtx.lineTo(centerX, centerY);
-      this.wheelCtx.fillStyle = item.fillStyle;
-      this.wheelCtx.fill();
-
-      if (this.translatedItems.length < 160) {
-        /** Draw the text */
-        this.wheelCtx.save();
-        this.wheelCtx.translate(centerX, centerY);
-        this.wheelCtx.rotate(startAngle + segmentSize / 2);
-        this.wheelCtx.fillStyle = '#fff';
-        this.wheelCtx.font = this.fontSize + 'px Arial';
-        this.wheelCtx.textAlign = 'right';
-        this.wheelCtx.fillText(item.text, radius - 7, 5);
-        this.wheelCtx.restore();
+    // Build reel strips: repeat items enough times for smooth spinning
+    // Each reel needs enough items to scroll through several full cycles
+    const minCycles = 4;
+    const buildStrip = (baseItems: ReelItem[]): ReelItem[] => {
+      const strip: ReelItem[] = [];
+      for (let c = 0; c < minCycles + 2; c++) {
+        for (const item of baseItems) {
+          strip.push({ ...item });
+        }
       }
+      return strip;
+    };
 
-      startAngle = endAngle;
-    }
+    // Shuffle for reel variety (reels 2 and 3 get different orderings)
+    const shuffle = (arr: ReelItem[]): ReelItem[] => {
+      const copy = [...arr];
+      for (let i = copy.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [copy[i], copy[j]] = [copy[j], copy[i]];
+      }
+      return copy;
+    };
+
+    this.reelItems = buildStrip(translated);
+    this.reel2Items = buildStrip(shuffle(translated));
+    this.reel3Items = buildStrip(shuffle(translated));
+
+    // Position reels so the first item is centered in the window
+    const windowCenter = this.getWindowHeight() / 2 - this.itemHeight / 2;
+    this.reel1Offset = -0 + windowCenter;
+    this.reel2Offset = -0 + windowCenter;
+    this.reel3Offset = -0 + windowCenter;
   }
 
-  drawPointer(): void {
-    this.pointerCtx.save();
-    this.pointerCtx.lineWidth = 2;
-    this.pointerCtx.strokeStyle = this.pointerStrokeColor;
-    this.pointerCtx.fillStyle = this.pointerFillColor;
-    this.pointerCtx.beginPath();
-    this.pointerCtx.moveTo(this.pointerCanvas.width - 2, (this.pointerCanvas.height / 2) - 20);
-    this.pointerCtx.lineTo(this.pointerCanvas.width - 2, (this.pointerCanvas.height / 2) + 20);
-    this.pointerCtx.lineTo(this.pointerCanvas.width - this.cursorWidth, this.pointerCanvas.height / 2);
-    this.pointerCtx.lineTo(this.pointerCanvas.width - 2, (this.pointerCanvas.height / 2) - 20);
-    this.pointerCtx.stroke();
-    this.pointerCtx.fill();
-    this.pointerCtx.restore();
+  private getWindowHeight(): number {
+    return window.innerWidth <= 768 ? 225 : 270;
   }
 
   spinWheel(): void {
@@ -178,92 +124,108 @@ export class WheelComponent implements AfterViewInit, OnChanges {
 
     this.spinning = true;
     this.gameStateService.setWheelSpinning(this.spinning);
+    this.lastClickedSegment = -1;
 
+    // Select winning item using weighted random
+    this.winningNumber = this.getRandomWeightedIndex();
+    const winningItem = this.items[this.winningNumber];
+
+    // Calculate target positions - each reel stops on the winning item
+    const windowCenter = this.getWindowHeight() / 2 - this.itemHeight / 2;
+    const itemCount = this.items.length;
+
+    // Find winning item position in each reel strip
+    const findWinningPos = (reelItems: ReelItem[], targetCycle: number): number => {
+      let count = 0;
+      for (let i = 0; i < reelItems.length; i++) {
+        if (reelItems[i].text === winningItem.text) {
+          count++;
+          if (count === targetCycle) {
+            return i;
+          }
+        }
+      }
+      return 0;
+    };
+
+    // Target the 3rd occurrence of winning item (ensures enough scrolling)
+    const targetCycle = 3;
+    const r1WinIdx = findWinningPos(this.reelItems, targetCycle);
+    const r2WinIdx = findWinningPos(this.reel2Items, targetCycle);
+    const r3WinIdx = findWinningPos(this.reel3Items, targetCycle);
+
+    this.reel1FinalOffset = -(r1WinIdx * this.itemHeight) + windowCenter;
+    this.reel2FinalOffset = -(r2WinIdx * this.itemHeight) + windowCenter;
+    this.reel3FinalOffset = -(r3WinIdx * this.itemHeight) + windowCenter;
+
+    // Staggered stop times for dramatic effect
+    this.reel1Duration = 1500 + Math.random() * 500;
+    this.reel2Duration = 2200 + Math.random() * 500;
+    this.reel3Duration = 3000 + Math.random() * 500;
 
     this.startTime = performance.now();
-    const totalWeight = this.getTotalWeights();
-    const arcSize = (2 * Math.PI) / (totalWeight);
-
-    this.winningNumber = this.getRandomWeightedIndex();
-
-    this.totalRotations = Math.floor(Math.random() * 4) + 1;
-
-    let winningAngle = 0;
-    const winningSegmentSize = arcSize * this.items[this.winningNumber].weight;
-
-    for (let index = 0; index < this.items.length; index++) {
-      const item = this.items[index];
-      winningAngle += arcSize * item.weight;
-      if (index === this.winningNumber) {
-        break;
-      }
-    }
-
-    const offset = Math.random() * winningSegmentSize;
-    this.finalRotation = this.totalRotations * 2 * Math.PI + (2 * Math.PI - winningAngle + offset);
-
     requestAnimationFrame(this.animate.bind(this));
   }
 
   private animate(currentTime: number): void {
     const elapsed = currentTime - this.startTime;
-    const progress = Math.min(elapsed / this.duration, 1);
-    const easedProgress = 1 - Math.pow(1 - progress, 3);
-    this.currentRotation = easedProgress * this.finalRotation;
 
-    const totalWeight = this.getTotalWeights();
+    // Animate each reel independently
+    this.reel1Offset = this.animateReel(elapsed, this.reel1Duration, this.reel1FinalOffset, this.reelItems.length);
+    this.reel2Offset = this.animateReel(elapsed, this.reel2Duration, this.reel2FinalOffset, this.reel2Items.length);
+    this.reel3Offset = this.animateReel(elapsed, this.reel3Duration, this.reel3FinalOffset, this.reel3Items.length);
 
-    this.drawWheel(this.currentRotation);
+    // Click sound on segment change
+    const currentIdx = Math.round(-this.reel1Offset / this.itemHeight);
+    if (currentIdx !== this.lastClickedSegment && elapsed < this.reel3Duration) {
+      this.lastClickedSegment = currentIdx;
+      this.audioService.playAudio(this.clickAudio, 1.0);
+    }
 
-    if (progress < 1) {
+    // Update display segment based on last reel
+    if (elapsed >= this.reel3Duration) {
+      this.currentSegment = this.items[this.winningNumber].text;
+    } else if (elapsed >= this.reel1Duration) {
+      this.currentSegment = this.items[this.winningNumber].text;
+    }
+
+    if (elapsed < this.reel3Duration) {
       requestAnimationFrame(this.animate.bind(this));
     } else {
       this.spinning = false;
-      this.selectedItemEvent.emit(this.winningNumber);
       this.gameStateService.setWheelSpinning(false);
-    }
-
-    const segment = this.getCurrentSegment();
-
-    if (segment !== this.currentSegment) {
-      this.currentSegment = segment;
-      this.audioService.playAudio(this.clickAudio, 1.0);
+      this.selectedItemEvent.emit(this.winningNumber);
     }
   }
 
-  private getCurrentSegment(): string {
-    const totalWeight = this.getTotalWeights();
+  private animateReel(elapsed: number, duration: number, finalOffset: number, totalItems: number): number {
+    const windowCenter = this.getWindowHeight() / 2 - this.itemHeight / 2;
+    const startOffset = windowCenter;
 
-    const currentAngle = (2 * Math.PI - (this.currentRotation % (2 * Math.PI))) % (2 * Math.PI);
-    let accumulatedWeight = 0;
-
-    for (const item of this.translatedItems) {
-      accumulatedWeight += item.weight;
-      const segmentEnd = (accumulatedWeight / totalWeight) * 2 * Math.PI;
-
-      if (currentAngle <= segmentEnd) {
-        return item.text;
-      }
+    if (elapsed >= duration) {
+      return finalOffset;
     }
-    return '-';
-  }
 
-  private getTotalWeights(): number {
-    return this.translatedItems.reduce((sum, item) => sum + item.weight, 0);
+    const progress = elapsed / duration;
+    // Ease out cubic for smooth deceleration
+    const easedProgress = 1 - Math.pow(1 - progress, 3);
+
+    const totalDistance = startOffset - finalOffset;
+    return startOffset - (totalDistance * easedProgress);
   }
 
   getRandomWeightedIndex(): number {
-    const totalWeight = this.getTotalWeights();
+    const totalWeight = this.items.reduce((sum, item) => sum + item.weight, 0);
     let random = Math.random() * totalWeight;
     let accumulatedWeight = 0;
 
-    for (let i = 0; i < this.translatedItems.length; i++) {
-      accumulatedWeight += this.translatedItems[i].weight;
+    for (let i = 0; i < this.items.length; i++) {
+      accumulatedWeight += this.items[i].weight;
       if (random < accumulatedWeight) {
         return i;
       }
     }
-    return this.translatedItems.length - 1;
+    return this.items.length - 1;
   }
 
   @HostListener('window:keydown.space', ['$event'])

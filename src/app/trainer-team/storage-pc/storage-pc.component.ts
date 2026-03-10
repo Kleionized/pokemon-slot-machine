@@ -4,13 +4,14 @@ import { TrainerService } from '../../services/trainer-service/trainer.service';
 import { DarkModeService } from '../../services/dark-mode-service/dark-mode.service';
 import { Observable } from 'rxjs';
 import { CommonModule } from '@angular/common';
-import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
+import { NgbModal, NgbTooltipModule } from '@ng-bootstrap/ng-bootstrap';
 import { CdkDragDrop, DragDropModule, moveItemInArray, transferArrayItem } from '@angular/cdk/drag-drop';
 import { PokemonItem } from '../../interfaces/pokemon-item';
 import { GameStateService } from '../../services/game-state-service/game-state.service';
 import { GameState } from '../../services/game-state-service/game-state';
-import {TranslatePipe} from '@ngx-translate/core';
+import {TranslatePipe, TranslateService} from '@ngx-translate/core';
 import { AudioService } from '../../services/audio-service/audio.service';
+import { buildPokemonTooltip } from '../../utils/pokemon-tooltip';
 
 @Component({
   selector: 'app-storage-pc',
@@ -18,6 +19,7 @@ import { AudioService } from '../../services/audio-service/audio.service';
     DragDropModule,
     CommonModule,
     NgIconsModule,
+    NgbTooltipModule,
     TranslatePipe
   ],
   templateUrl: './storage-pc.component.html',
@@ -29,7 +31,8 @@ export class StoragePcComponent implements OnInit {
                 private darkModeService: DarkModeService,
                 private modalService: NgbModal,
                 private gameStateService: GameStateService,
-                private audioService: AudioService) {
+                private audioService: AudioService,
+                private translateService: TranslateService) {
       this.pcTurningOn = this.audioService.createAudio('./PCTurningOn.mp3');
       this.pcLoginAudio = this.audioService.createAudio('./PCLogin.mp3');
       this.pcLogoutAudio = this.audioService.createAudio('./PCLogout.mp3');
@@ -102,6 +105,10 @@ export class StoragePcComponent implements OnInit {
         return pokemon.sprite?.front_shiny || 'place-holder-pixel.png';
       }
       return pokemon.sprite?.front_default || 'place-holder-pixel.png';
+    }
+
+    getPokemonTooltip(pokemon: PokemonItem): string {
+      return buildPokemonTooltip(pokemon, key => this.translateService.instant(key));
     }
 
     drop(event: CdkDragDrop<PokemonItem[]>) {

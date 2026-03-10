@@ -50,7 +50,11 @@ interface PokemonItem extends WheelItem {
   pokemonId: number;
   sprite: { front_default: string; front_shiny: string; } | null;
   shiny: boolean;
-  power: 1 | 2 | 3 | 4 | 5;
+  bst?: number;
+  types?: string[];
+  typeEffectiveness?: Record<string, number>;
+  typeResistances?: Record<string, number>;
+  power: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 12;
 }
 
 // item-item.ts - In-game items
