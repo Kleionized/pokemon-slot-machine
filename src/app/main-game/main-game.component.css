@@ -6,11 +6,11 @@
     min-height: 100vh;
 }
 
-.game-header {
+.game-footer {
     display: flex;
     justify-content: center;
     padding: 0.5rem 0;
-    margin-bottom: 0.75rem;
+    margin-top: 0.75rem;
 }
 
 .header-actions {

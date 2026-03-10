@@ -128,7 +128,8 @@ export class GymBattleRouletteComponent implements OnInit, OnDestroy {
     this.currentWinPercent = getGymBattleSummary(
       this.trainerTeam,
       this.trainerItems,
-      this.currentLeaderType
+      this.currentLeaderType,
+      this.currentRound
     ).winPercent;
   }
 

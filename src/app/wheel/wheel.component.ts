@@ -530,7 +530,7 @@ export class WheelComponent implements OnInit, OnChanges, OnDestroy {
     const leaderTypes = Array.isArray(leaderType) ? leaderType : [leaderType];
     const averageWinPercent = Math.round(
       leaderTypes.reduce((sum, type) => {
-        return sum + getGymBattleSummary(this.trainerTeam, this.trainerItems, type).winPercent;
+        return sum + getGymBattleSummary(this.trainerTeam, this.trainerItems, type, this.currentRound).winPercent;
       }, 0) / leaderTypes.length
     );
 

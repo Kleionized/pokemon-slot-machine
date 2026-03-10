@@ -1,11 +1,4 @@
 <div class="game-container">
-    <div class="game-header">
-        <div class="header-actions">
-            <app-settings-button></app-settings-button>
-            <app-restart-game-buttom (restartEvent)="resetGameAction()"></app-restart-game-buttom>
-            <app-language-selector></app-language-selector>
-        </div>
-    </div>
     <div class="game-content">
         <div class="slot-panel">
             <app-roulette-container
@@ -19,6 +12,13 @@
             <div class="items">
                 <app-items (rareCandyInterrupt)="rareCandyInterrupt($event)"></app-items>
             </div>
+        </div>
+    </div>
+    <div class="game-footer">
+        <div class="header-actions">
+            <app-settings-button></app-settings-button>
+            <app-restart-game-buttom (restartEvent)="resetGameAction()"></app-restart-game-buttom>
+            <app-language-selector></app-language-selector>
         </div>
     </div>
 </div>

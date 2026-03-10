@@ -40,7 +40,8 @@ export function getChampionDifficulty(currentRound: number): number {
 export function getGymBattleSummary(
   team: PokemonItem[],
   items: ItemItem[],
-  leaderType: PokemonType
+  leaderType: PokemonType,
+  currentRound: number = 0
 ): BattleOddsSummary {
   let yesCount = 1;
   let noCount = 0;
@@ -54,6 +55,7 @@ export function getGymBattleSummary(
   });
 
   yesCount += Math.ceil(Math.max(0, getXAttackBonus(team, items)));
+  noCount += getGymDifficulty(currentRound);
 
   return {
     yesCount,
