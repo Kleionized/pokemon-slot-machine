@@ -8,8 +8,6 @@ import { ItemItem } from '../interfaces/item-item';
 import { RestartGameButtonComponent } from "../restart-game-buttom/restart-game-buttom.component";
 import { TrainerService } from '../services/trainer-service/trainer.service';
 import { AnalyticsService } from '../services/analytics-service/analytics.service';
-import { CoffeeButtonComponent } from "./coffee-button/coffee-button.component";
-import { NgIconsModule } from '@ng-icons/core';
 import { DarkModeService } from '../services/dark-mode-service/dark-mode.service';
 import { Observable } from 'rxjs';
 import { LanguageSelectorComponent } from './language-selector/language-selector.component';
@@ -26,8 +24,6 @@ import { RareCandyService } from '../services/rare-candy-service/rare-candy.serv
     TrainerTeamComponent,
     ItemsComponent,
     RestartGameButtonComponent,
-    CoffeeButtonComponent,
-    NgIconsModule,
     NgbCollapseModule,
     LanguageSelectorComponent
   ],
