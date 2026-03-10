@@ -3,6 +3,9 @@
 <app-wheel
     #wheel
     [items]="victoryOdds"
+    [statusPrimaryLabel]="'BOSS'"
+    [statusPrimaryValue]="'ELITE 4'"
+    [statusSecondaryValue]="currentWinPercent"
     (selectedItemEvent)="onItemSelected($event)">
 </app-wheel>
 

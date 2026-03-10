@@ -13,10 +13,9 @@ import { PokemonItem, PokemonType } from '../../../../interfaces/pokemon-item';
 import { ItemItem } from '../../../../interfaces/item-item';
 import { WheelItem } from '../../../../interfaces/wheel-item';
 import { GymLeader } from '../../../../interfaces/gym-leader';
-import { interleaveOdds } from '../../../../utils/odd-utils';
 import { ModalQueueService } from '../../../../services/modal-queue-service/modal-queue.service';
-import { getDefensiveTypeMultiplier } from '../../../../utils/pokemon-type-utils';
 import { GymLeaderType, gymLeaderTypesByGeneration } from './gym-leader-types-by-generation';
+import { buildGymVictoryOdds, getGymBattleSummary, getGymDifficulty, getXAttackBonus } from '../../../../utils/battle-odds';
 
 @Component({
   selector: 'app-gym-battle-roulette',
@@ -61,6 +60,7 @@ export class GymBattleRouletteComponent implements OnInit, OnDestroy {
 
   currentLeader!: GymLeader;
   currentLeaderType: PokemonType = 'normal';
+  currentWinPercent = 50;
   currentItem!: ItemItem;
   retries = 0;
   private teamSubscription!: Subscription;
@@ -117,37 +117,23 @@ export class GymBattleRouletteComponent implements OnInit, OnDestroy {
   }
 
   private calcVictoryOdds(): void {
-    const yesOdds: WheelItem[] = [];
-    const noOdds: WheelItem[] = [];
-
-    yesOdds.push({ text: "game.main.roulette.gym.yes", fillStyle: "green", weight: 1 });
-
-    this.trainerTeam.forEach(pokemon => {
-      for (let i = 0; i < pokemon.power; i++) {
-        yesOdds.push({ text: "game.main.roulette.gym.yes", fillStyle: "green", weight: 1 });
-      }
-
-      const matchupOdds = this.getMatchupOdds(pokemon);
-      this.addOdds(yesOdds, matchupOdds.yes, "game.main.roulette.gym.yes", "green");
-      this.addOdds(noOdds, matchupOdds.no, "game.main.roulette.gym.no", "crimson");
-    });
-
-    this.addOdds(yesOdds, this.plusModifiers(), "game.main.roulette.gym.yes", "green");
-
-    this.addOdds(noOdds, this.getGymDifficulty(), "game.main.roulette.gym.no", "crimson");
-
-    this.victoryOdds = interleaveOdds(yesOdds, noOdds);
+    this.victoryOdds = buildGymVictoryOdds(
+      this.trainerTeam,
+      this.trainerItems,
+      this.currentLeaderType,
+      this.currentRound,
+      "game.main.roulette.gym.yes",
+      "game.main.roulette.gym.no"
+    );
+    this.currentWinPercent = getGymBattleSummary(
+      this.trainerTeam,
+      this.trainerItems,
+      this.currentLeaderType
+    ).winPercent;
   }
 
   private plusModifiers(): number {
-    let power = 0;
-    const xAttacks = this.trainerItems.filter(item => item.name === 'x-attack');
-    xAttacks.forEach(() => {
-      const meanPower = this.trainerTeam.reduce((sum, pokemon) => sum + pokemon.power, 0) / this.trainerTeam.length;
-      power += meanPower;
-    });
-
-    return power;
+    return getXAttackBonus(this.trainerTeam, this.trainerItems);
   }
 
   private addOdds(odds: WheelItem[], count: number, text: string, fillStyle: string): void {
@@ -159,37 +145,7 @@ export class GymBattleRouletteComponent implements OnInit, OnDestroy {
   }
 
   private getGymDifficulty(): number {
-    return Math.ceil((this.currentRound + 1) * 1.25);
-  }
-
-  private getMatchupOdds(pokemon: PokemonItem): { yes: number; no: number } {
-    const offensiveMultiplier = pokemon.typeEffectiveness?.[this.currentLeaderType] ?? 1;
-    const defensiveMultiplier = getDefensiveTypeMultiplier(pokemon.types, this.currentLeaderType);
-
-    let yes = 0;
-    let no = 0;
-
-    if (offensiveMultiplier > 1) {
-      yes += this.getTypeStages(offensiveMultiplier);
-    } else if (offensiveMultiplier < 1) {
-      no += this.getTypeStages(offensiveMultiplier);
-    }
-
-    if (defensiveMultiplier < 1) {
-      yes += this.getTypeStages(defensiveMultiplier);
-    } else if (defensiveMultiplier > 1) {
-      no += this.getTypeStages(defensiveMultiplier);
-    }
-
-    return { yes, no };
-  }
-
-  private getTypeStages(multiplier: number): number {
-    if (multiplier === 1) {
-      return 0;
-    }
-
-    return Math.max(1, Math.round(Math.abs(Math.log2(multiplier))));
+    return getGymDifficulty(this.currentRound);
   }
 
   private getCurrentLeader(): void {
@@ -229,6 +185,10 @@ export class GymBattleRouletteComponent implements OnInit, OnDestroy {
     }
 
     return leaderType;
+  }
+
+  get currentLeaderTypeDisplay(): string {
+    return this.currentLeaderType.toUpperCase();
   }
 
   private hasPotions(): ItemItem | undefined {

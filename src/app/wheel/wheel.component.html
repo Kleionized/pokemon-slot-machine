@@ -1,56 +1,126 @@
-<div class="slot-machine-container">
-    <p class="current-segment">{{ currentSegment | translate }}</p>
-    <div class="slot-machine" [class.dark]="(darkMode | async)">
-        <div class="slot-frame">
-            <div class="slot-decorations">
-                <div class="pokeball-decoration left"></div>
-                <div class="pokeball-decoration right"></div>
-            </div>
-            <div class="slot-reels">
-                <div class="reel-wrapper">
-                    <div class="reel-window">
-                        <div class="reel-strip" [style.transform]="'translateY(' + reel1Offset + 'px)'">
-                            @for (item of reelItems; track $index) {
-                                <div class="reel-item" [style.background-color]="item.fillStyle">
-                                    <span>{{ item.translatedText }}</span>
-                                </div>
-                            }
-                        </div>
-                    </div>
-                </div>
-                <div class="reel-divider"></div>
-                <div class="reel-wrapper">
-                    <div class="reel-window">
-                        <div class="reel-strip" [style.transform]="'translateY(' + reel2Offset + 'px)'">
-                            @for (item of reel2Items; track $index) {
-                                <div class="reel-item" [style.background-color]="item.fillStyle">
-                                    <span>{{ item.translatedText }}</span>
-                                </div>
-                            }
-                        </div>
-                    </div>
-                </div>
-                <div class="reel-divider"></div>
-                <div class="reel-wrapper">
-                    <div class="reel-window">
-                        <div class="reel-strip" [style.transform]="'translateY(' + reel3Offset + 'px)'">
-                            @for (item of reel3Items; track $index) {
-                                <div class="reel-item" [style.background-color]="item.fillStyle">
-                                    <span>{{ item.translatedText }}</span>
-                                </div>
-                            }
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="win-line"></div>
+<div class="cabinet-shell">
+    <div class="bg-lines">
+        <div class="line" style="top: 15%"></div>
+        <div class="line" style="top: 20%"></div>
+        <div class="line" style="top: 85%"></div>
+        <div class="line" style="top: 90%"></div>
+        <div class="line" style="top: 95%"></div>
+    </div>
+
+    <div class="header">
+        <div class="display-box">
+            <div class="label">{{ displayPrimaryLabel }}</div>
+            <div class="value">{{ displayPrimaryValue }}</div>
+        </div>
+        <div class="display-box">
+            <div class="label">{{ displaySecondaryLabel }}</div>
+            <div class="value">{{ displaySecondaryValue }}</div>
         </div>
     </div>
-    <button class="slot-lever-btn"
-            [class.dark]="(darkMode | async)"
-            [class.spinning]="spinning"
-            (click)="spinWheel()">
-        <span class="lever-icon">&#9654;</span>
-        {{ 'wheel.spin' | translate }}
-    </button>
+
+    <div class="main-area">
+        <div class="indicators left">
+            @for (indicator of indicators; track $index) {
+                <div class="indicator-row">
+                    <div class="hex-wrapper">
+                        <div class="hex-border"></div>
+                        <div class="hex-inner" [style.background-color]="indicator.color">{{ indicator.num }}</div>
+                    </div>
+                    <div class="light" [class.active]="isIndicatorActive($index)">
+                        <div class="glare"></div>
+                    </div>
+                </div>
+            }
+        </div>
+
+        <div class="center-console">
+            <div class="spin-instruction">{{ spinning ? 'STOP THE REELS' : 'CLICK CABINET OR PRESS SPACE' }}</div>
+            <div class="reels-wrapper" [class.is-spinning]="spinning" (click)="startSpin()">
+                <div class="paylines">
+                    <div class="payline h-top" [style.background-color]="indicators[1].color" [style.color]="indicators[1].color"></div>
+                    <div class="payline h-mid" [style.background-color]="indicators[2].color" [style.color]="indicators[2].color"></div>
+                    <div class="payline h-bot" [style.background-color]="indicators[3].color" [style.color]="indicators[3].color"></div>
+                    <div class="payline d-1" [style.background-color]="indicators[0].color" [style.color]="indicators[0].color"></div>
+                    <div class="payline d-2" [style.background-color]="indicators[4].color" [style.color]="indicators[4].color"></div>
+                </div>
+
+                <div class="reels-grid">
+                    <div class="reel-column">
+                        <div class="reel-strip" [style.transform]="'translateY(' + reel1Offset + 'px)'">
+                            @for (item of reelItems; track $index) {
+                                <div class="reel-item" [class.blur]="isReelSpinning(0)">
+                                    @if (item.spriteUrl) {
+                                        <img class="symbol-sprite" [src]="item.spriteUrl" [alt]="item.translatedText">
+                                        <span class="symbol-caption" [style.background-color]="item.fillStyle">{{ item.translatedText }}</span>
+                                    } @else {
+                                        <span class="symbol-fallback" [style.background-color]="item.fillStyle">{{ item.translatedText }}</span>
+                                    }
+                                </div>
+                            }
+                        </div>
+                    </div>
+
+                    <div class="reel-column">
+                        <div class="reel-strip" [style.transform]="'translateY(' + reel2Offset + 'px)'">
+                            @for (item of reel2Items; track $index) {
+                                <div class="reel-item" [class.blur]="isReelSpinning(1)">
+                                    @if (item.spriteUrl) {
+                                        <img class="symbol-sprite" [src]="item.spriteUrl" [alt]="item.translatedText">
+                                        <span class="symbol-caption" [style.background-color]="item.fillStyle">{{ item.translatedText }}</span>
+                                    } @else {
+                                        <span class="symbol-fallback" [style.background-color]="item.fillStyle">{{ item.translatedText }}</span>
+                                    }
+                                </div>
+                            }
+                        </div>
+                    </div>
+
+                    <div class="reel-column">
+                        <div class="reel-strip" [style.transform]="'translateY(' + reel3Offset + 'px)'">
+                            @for (item of reel3Items; track $index) {
+                                <div class="reel-item" [class.blur]="isReelSpinning(2)">
+                                    @if (item.spriteUrl) {
+                                        <img class="symbol-sprite" [src]="item.spriteUrl" [alt]="item.translatedText">
+                                        <span class="symbol-caption" [style.background-color]="item.fillStyle">{{ item.translatedText }}</span>
+                                    } @else {
+                                        <span class="symbol-fallback" [style.background-color]="item.fillStyle">{{ item.translatedText }}</span>
+                                    }
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="indicators right">
+            @for (indicator of indicators; track $index) {
+                <div class="indicator-row">
+                    <div class="light" [class.active]="isIndicatorActive($index)">
+                        <div class="glare"></div>
+                    </div>
+                    <div class="hex-wrapper">
+                        <div class="hex-border"></div>
+                        <div class="hex-inner" [style.background-color]="indicator.color">{{ indicator.num }}</div>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+
+    <div class="footer">
+        <div class="stop-lines"></div>
+        <div class="stop-buttons">
+            <div class="btn-container">
+                <button class="stop-btn" [class.pressed]="!isReelSpinning(0)" (click)="stopReel(0); $event.stopPropagation()" [disabled]="!isReelSpinning(0)"></button>
+            </div>
+            <div class="btn-container">
+                <button class="stop-btn" [class.pressed]="!isReelSpinning(1)" (click)="stopReel(1); $event.stopPropagation()" [disabled]="!isReelSpinning(1)"></button>
+            </div>
+            <div class="btn-container">
+                <button class="stop-btn" [class.pressed]="!isReelSpinning(2)" (click)="stopReel(2); $event.stopPropagation()" [disabled]="!isReelSpinning(2)"></button>
+            </div>
+        </div>
+        <div class="stop-lines"></div>
+    </div>
 </div>

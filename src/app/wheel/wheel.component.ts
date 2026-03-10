@@ -1,35 +1,60 @@
-import { Component, EventEmitter, HostListener, Input, OnChanges, Output, SimpleChanges } from '@angular/core';
-import { WheelItem } from '../interfaces/wheel-item';
-import { DarkModeService } from '../services/dark-mode-service/dark-mode.service';
-import { Observable } from 'rxjs';
 import { CommonModule } from '@angular/common';
-import { GameStateService } from '../services/game-state-service/game-state.service';
-import { TranslatePipe, TranslateService } from '@ngx-translate/core';
-import { AudioService } from '../services/audio-service/audio.service';
+import { Component, EventEmitter, HostListener, Input, OnChanges, OnDestroy, OnInit, Output, SimpleChanges } from '@angular/core';
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
+import { TranslateService } from '@ngx-translate/core';
+import { Subscription } from 'rxjs';
+import { GenerationItem } from '../interfaces/generation-item';
+import { ItemItem } from '../interfaces/item-item';
+import { PokemonItem, PokemonType } from '../interfaces/pokemon-item';
+import { WheelItem } from '../interfaces/wheel-item';
+import { GameStateService } from '../services/game-state-service/game-state.service';
+import { GameState } from '../services/game-state-service/game-state';
+import { AudioService } from '../services/audio-service/audio.service';
+import { GenerationService } from '../services/generation-service/generation.service';
+import { TrainerService } from '../services/trainer-service/trainer.service';
+import { GymLeaderType, gymLeaderTypesByGeneration } from '../main-game/roulette-container/roulettes/gym-battle-roulette/gym-leader-types-by-generation';
+import { getChampionDifficulty, getEliteDifficulty, getGymBattleSummary, getPowerBattleSummary } from '../utils/battle-odds';
 
 interface ReelItem {
+  fillStyle: string;
+  spriteUrl: string | null;
   text: string;
   translatedText: string;
-  fillStyle: string;
   weight: number;
 }
+
+type SpriteLikeItem = WheelItem & {
+  pokemonId?: number;
+  shiny?: boolean;
+  sprite?: string | { front_default?: string | null; front_shiny?: string | null; } | null;
+};
 
 @Component({
   selector: 'app-wheel',
   imports: [
-    CommonModule,
-    TranslatePipe
+    CommonModule
   ],
   templateUrl: './wheel.component.html',
   styleUrl: './wheel.component.css'
 })
-export class WheelComponent implements OnChanges {
+export class WheelComponent implements OnInit, OnChanges, OnDestroy {
 
   @Input() items: WheelItem[] = [];
+  @Input() statusPrimaryLabel?: string;
+  @Input() statusPrimaryValue?: string | null;
+  @Input() statusSecondaryLabel?: string;
+  @Input() statusSecondaryValue?: number | string | null;
   @Output() selectedItemEvent = new EventEmitter<number>();
+
+  readonly indicators = [
+    { num: 3, color: '#39ff14' },
+    { num: 2, color: '#ffcc00' },
+    { num: 1, color: '#66b2ff' },
+    { num: 2, color: '#ffcc00' },
+    { num: 3, color: '#39ff14' }
+  ];
+
   spinning = false;
-  darkMode!: Observable<boolean>;
 
   reelItems: ReelItem[] = [];
   reel2Items: ReelItem[] = [];
@@ -39,199 +64,175 @@ export class WheelComponent implements OnChanges {
   reel2Offset = 0;
   reel3Offset = 0;
 
-  currentSegment: string = '-';
+  private readonly itemHeight = 100;
+  private readonly baseCycleIndex = 2;
+  private readonly reelSpeeds = [920, 1080, 1240];
+
+  private animationFrameId: number | null = null;
+  private autoStopTimers: Array<ReturnType<typeof setTimeout> | null> = [null, null, null];
+  private currentGameState: GameState = 'game-start';
+  private currentGeneration: GenerationItem | null = null;
+  private currentRound = 0;
+  private lastFrameTime = 0;
+  private reelSpinStates = [false, false, false];
+  private reelDecelerating = [false, false, false];
+  private reelDecelStart: number[] = [0, 0, 0];
+  private reelDecelFrom: number[] = [0, 0, 0];
+  private reelDecelTo: number[] = [0, 0, 0];
+  private readonly decelDuration = 400; // ms for smooth stop
+  private subscriptions: Subscription[] = [];
+  private trainerItems: ItemItem[] = [];
+  private trainerTeam: PokemonItem[] = [];
+  private winningNumber = -1;
+
+  private derivedPrimaryLabel = 'GYM';
+  private derivedPrimaryValue = '---';
+  private derivedSecondaryValue = '--';
+
   clickAudio!: HTMLAudioElement;
-  private itemHeight = 90;
-  private winningNumber!: number;
-  private startTime = 0;
-  private reel1Duration = 0;
-  private reel2Duration = 0;
-  private reel3Duration = 0;
-  private reel1FinalOffset = 0;
-  private reel2FinalOffset = 0;
-  private reel3FinalOffset = 0;
-  private lastClickedSegment = -1;
-  private resultEmitted = false;
 
   constructor(
-    private darkModeService: DarkModeService,
-    private gameStateService: GameStateService,
-    private translateService: TranslateService,
     private audioService: AudioService,
-    private modalService: NgbModal
+    private gameStateService: GameStateService,
+    private generationService: GenerationService,
+    private modalService: NgbModal,
+    private trainerService: TrainerService,
+    private translateService: TranslateService
   ) {
     this.clickAudio = this.audioService.createAudio('./click.mp3');
-    this.darkMode = this.darkModeService.darkMode$;
+  }
+
+  ngOnInit(): void {
+    this.trainerTeam = this.trainerService.getTeam();
+    this.trainerItems = this.trainerService.getItems();
+    this.currentGeneration = this.generationService.getCurrentGeneration();
+
+    this.subscriptions.push(
+      this.generationService.getGeneration().subscribe(generation => {
+        this.currentGeneration = generation;
+        this.updateStatusPanel();
+      }),
+      this.gameStateService.currentRoundObserver.subscribe(round => {
+        this.currentRound = round;
+        this.updateStatusPanel();
+      }),
+      this.gameStateService.currentState.subscribe(state => {
+        this.currentGameState = state;
+        this.updateStatusPanel();
+      }),
+      this.trainerService.getTeamObservable().subscribe(team => {
+        this.trainerTeam = team;
+        this.updateStatusPanel();
+      }),
+      this.trainerService.getItemsObservable().subscribe(items => {
+        this.trainerItems = items;
+        this.updateStatusPanel();
+      })
+    );
+
+    this.buildReels();
+    this.updateStatusPanel();
   }
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['items']) {
-      this.translateService.get('wheel.spin').subscribe(() => {
-        this.buildReels();
-      });
+      this.buildReels();
     }
+
+    this.updateStatusPanel();
   }
 
-  private buildReels(): void {
-    const translated: ReelItem[] = this.items.map(item => ({
-      text: item.text,
-      translatedText: this.translateService.instant(item.text),
-      fillStyle: item.fillStyle,
-      weight: item.weight
-    }));
-
-    // Build reel strips: repeat items enough times for smooth spinning
-    // Each reel needs enough items to scroll through several full cycles
-    const minCycles = 4;
-    const buildStrip = (baseItems: ReelItem[]): ReelItem[] => {
-      const strip: ReelItem[] = [];
-      for (let c = 0; c < minCycles + 2; c++) {
-        for (const item of baseItems) {
-          strip.push({ ...item });
-        }
-      }
-      return strip;
-    };
-
-    // Shuffle for reel variety (reels 2 and 3 get different orderings)
-    const shuffle = (arr: ReelItem[]): ReelItem[] => {
-      const copy = [...arr];
-      for (let i = copy.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [copy[i], copy[j]] = [copy[j], copy[i]];
-      }
-      return copy;
-    };
-
-    this.reelItems = buildStrip(translated);
-    this.reel2Items = buildStrip(shuffle(translated));
-    this.reel3Items = buildStrip(shuffle(translated));
-
-    // Position reels so the first item is centered in the window
-    const windowCenter = this.getWindowHeight() / 2 - this.itemHeight / 2;
-    this.reel1Offset = -0 + windowCenter;
-    this.reel2Offset = -0 + windowCenter;
-    this.reel3Offset = -0 + windowCenter;
+  ngOnDestroy(): void {
+    this.stopAnimation();
+    this.clearAutoStopTimers();
+    this.subscriptions.forEach(subscription => subscription.unsubscribe());
+    this.gameStateService.setWheelSpinning(false);
   }
 
-  private getWindowHeight(): number {
-    return window.innerWidth <= 768 ? 225 : 270;
-  }
-
-  spinWheel(): void {
-    if (this.spinning) {
+  startSpin(): void {
+    if (this.spinning || this.items.length === 0) {
       return;
     }
 
+    this.stopAnimation();
+    this.clearAutoStopTimers();
+
     this.spinning = true;
-    this.resultEmitted = false;
-    this.gameStateService.setWheelSpinning(this.spinning);
-    this.lastClickedSegment = -1;
-
-    // Select winning item using weighted random
+    this.reelSpinStates = [true, true, true];
+    this.reelDecelerating = [false, false, false];
+    this.gameStateService.setWheelSpinning(true);
     this.winningNumber = this.getRandomWeightedIndex();
+    this.lastFrameTime = performance.now();
+    this.animationFrameId = requestAnimationFrame(this.animate.bind(this));
+
+    this.autoStopTimers[0] = setTimeout(() => this.stopReel(0), 1600);
+    this.autoStopTimers[1] = setTimeout(() => this.stopReel(1), 2400);
+    this.autoStopTimers[2] = setTimeout(() => this.stopReel(2), 3200);
+  }
+
+  stopReel(reelIndex: number): void {
+    if (!this.reelSpinStates[reelIndex] || this.winningNumber < 0) {
+      return;
+    }
+
+    this.clearAutoStopTimer(reelIndex);
+
     const winningItem = this.items[this.winningNumber];
+    const reelItems = this.getReelSet(reelIndex);
+    const currentOffset = this.getReelOffset(reelIndex);
+    const targetOffset = this.getStopOffset(reelItems, currentOffset, winningItem.text);
 
-    // Calculate target positions - each reel stops on the winning item
-    const windowCenter = this.getWindowHeight() / 2 - this.itemHeight / 2;
-    const itemCount = this.items.length;
-
-    // Find winning item position in each reel strip
-    const findWinningPos = (reelItems: ReelItem[], targetCycle: number): number => {
-      let count = 0;
-      for (let i = 0; i < reelItems.length; i++) {
-        if (reelItems[i].text === winningItem.text) {
-          count++;
-          if (count === targetCycle) {
-            return i;
-          }
-        }
-      }
-      return 0;
-    };
-
-    // Target the 3rd occurrence of winning item (ensures enough scrolling)
-    const targetCycle = 3;
-    const r1WinIdx = findWinningPos(this.reelItems, targetCycle);
-    const r2WinIdx = findWinningPos(this.reel2Items, targetCycle);
-    const r3WinIdx = findWinningPos(this.reel3Items, targetCycle);
-
-    this.reel1FinalOffset = -(r1WinIdx * this.itemHeight) + windowCenter;
-    this.reel2FinalOffset = -(r2WinIdx * this.itemHeight) + windowCenter;
-    this.reel3FinalOffset = -(r3WinIdx * this.itemHeight) + windowCenter;
-
-    // Staggered stop times - fixed pace for consistency
-    this.reel1Duration = 1500;
-    this.reel2Duration = 2200;
-    this.reel3Duration = 3000;
-
-    this.startTime = performance.now();
-    requestAnimationFrame(this.animate.bind(this));
+    // Start smooth deceleration instead of snapping
+    this.reelSpinStates[reelIndex] = false;
+    this.reelDecelerating[reelIndex] = true;
+    this.reelDecelStart[reelIndex] = performance.now();
+    this.reelDecelFrom[reelIndex] = currentOffset;
+    this.reelDecelTo[reelIndex] = targetOffset;
+    this.audioService.playAudio(this.clickAudio, 0.85);
   }
 
-  private animate(currentTime: number): void {
-    const elapsed = currentTime - this.startTime;
-
-    // Animate each reel independently
-    this.reel1Offset = this.animateReel(elapsed, this.reel1Duration, this.reel1FinalOffset, this.reelItems.length);
-    this.reel2Offset = this.animateReel(elapsed, this.reel2Duration, this.reel2FinalOffset, this.reel2Items.length);
-    this.reel3Offset = this.animateReel(elapsed, this.reel3Duration, this.reel3FinalOffset, this.reel3Items.length);
-
-    // Click sound on segment change
-    const currentIdx = Math.round(-this.reel1Offset / this.itemHeight);
-    if (currentIdx !== this.lastClickedSegment && elapsed < this.reel3Duration) {
-      this.lastClickedSegment = currentIdx;
-      this.audioService.playAudio(this.clickAudio, 1.0);
-    }
-
-    // Update display segment based on last reel
-    if (elapsed >= this.reel3Duration) {
-      this.currentSegment = this.items[this.winningNumber].text;
-    } else if (elapsed >= this.reel1Duration) {
-      this.currentSegment = this.items[this.winningNumber].text;
-    }
-
-    if (elapsed < this.reel3Duration) {
-      requestAnimationFrame(this.animate.bind(this));
-    } else if (!this.resultEmitted) {
-      this.resultEmitted = true;
-      // Wait 500ms after reels stop before emitting result
-      setTimeout(() => {
-        this.spinning = false;
-        this.gameStateService.setWheelSpinning(false);
-        this.selectedItemEvent.emit(this.winningNumber);
-      }, 500);
-    }
+  get isSpinActive(): boolean {
+    return this.reelSpinStates.some(Boolean);
   }
 
-  private animateReel(elapsed: number, duration: number, finalOffset: number, totalItems: number): number {
-    const windowCenter = this.getWindowHeight() / 2 - this.itemHeight / 2;
-    const startOffset = windowCenter;
-
-    if (elapsed >= duration) {
-      return finalOffset;
-    }
-
-    const progress = elapsed / duration;
-    // Ease out cubic for smooth deceleration
-    const easedProgress = 1 - Math.pow(1 - progress, 3);
-
-    const totalDistance = startOffset - finalOffset;
-    return startOffset - (totalDistance * easedProgress);
+  get displayPrimaryLabel(): string {
+    return (this.statusPrimaryLabel ?? this.derivedPrimaryLabel).toUpperCase();
   }
 
-  getRandomWeightedIndex(): number {
-    const totalWeight = this.items.reduce((sum, item) => sum + item.weight, 0);
-    let random = Math.random() * totalWeight;
-    let accumulatedWeight = 0;
+  get displayPrimaryValue(): string {
+    return (this.statusPrimaryValue ?? this.derivedPrimaryValue).toUpperCase();
+  }
 
-    for (let i = 0; i < this.items.length; i++) {
-      accumulatedWeight += this.items[i].weight;
-      if (random < accumulatedWeight) {
-        return i;
-      }
+  get displaySecondaryLabel(): string {
+    return (this.statusSecondaryLabel ?? 'WIN%').toUpperCase();
+  }
+
+  get displaySecondaryValue(): string {
+    if (typeof this.statusSecondaryValue === 'number') {
+      return `${Math.round(this.statusSecondaryValue)}%`;
     }
-    return this.items.length - 1;
+
+    if (typeof this.statusSecondaryValue === 'string') {
+      return this.statusSecondaryValue.toUpperCase();
+    }
+
+    return this.derivedSecondaryValue.toUpperCase();
+  }
+
+  isIndicatorActive(index: number): boolean {
+    if (!this.spinning) {
+      return false;
+    }
+
+    if (index === 0 || index === this.indicators.length - 1) {
+      return true;
+    }
+
+    return this.reelSpinStates[Math.min(index, 2)];
+  }
+
+  isReelSpinning(reelIndex: number): boolean {
+    return this.reelSpinStates[reelIndex] || this.reelDecelerating[reelIndex];
   }
 
   @HostListener('window:keydown.space', ['$event'])
@@ -243,7 +244,302 @@ export class WheelComponent implements OnChanges {
 
     if (!this.spinning && !this.modalService.hasOpenModals() && !isInputOrButtonFocused) {
       event.preventDefault();
-      this.spinWheel();
+      this.startSpin();
     }
+  }
+
+  private animate(currentTime: number): void {
+    const deltaSeconds = Math.min((currentTime - this.lastFrameTime) / 1000, 0.05);
+    this.lastFrameTime = currentTime;
+
+    // Advance spinning reels
+    if (this.reelSpinStates[0]) {
+      this.reel1Offset = this.advanceOffset(this.reel1Offset, this.reelSpeeds[0], deltaSeconds);
+    }
+
+    if (this.reelSpinStates[1]) {
+      this.reel2Offset = this.advanceOffset(this.reel2Offset, this.reelSpeeds[1], deltaSeconds);
+    }
+
+    if (this.reelSpinStates[2]) {
+      this.reel3Offset = this.advanceOffset(this.reel3Offset, this.reelSpeeds[2], deltaSeconds);
+    }
+
+    // Animate decelerating reels with ease-out
+    for (let i = 0; i < 3; i++) {
+      if (this.reelDecelerating[i]) {
+        const elapsed = currentTime - this.reelDecelStart[i];
+        const progress = Math.min(elapsed / this.decelDuration, 1);
+        // Ease-out cubic
+        const eased = 1 - Math.pow(1 - progress, 3);
+        const from = this.reelDecelFrom[i];
+        const to = this.reelDecelTo[i];
+        const current = from + (to - from) * eased;
+        this.setReelOffset(i, current);
+
+        if (progress >= 1) {
+          this.reelDecelerating[i] = false;
+          this.setReelOffset(i, to);
+
+          // Check if all reels are done
+          if (!this.reelSpinStates.some(Boolean) && !this.reelDecelerating.some(Boolean)) {
+            this.stopAnimation();
+            setTimeout(() => {
+              if (this.spinning) {
+                this.finishSpin();
+              }
+            }, 400);
+            return;
+          }
+        }
+      }
+    }
+
+    const anyActive = this.reelSpinStates.some(Boolean) || this.reelDecelerating.some(Boolean);
+    if (anyActive) {
+      this.animationFrameId = requestAnimationFrame(this.animate.bind(this));
+    }
+  }
+
+  private advanceOffset(currentOffset: number, speed: number, deltaSeconds: number): number {
+    const nextOffset = currentOffset - (speed * deltaSeconds);
+    const cycleHeight = this.getCycleHeight();
+    const centerOffset = this.getCenterOffset();
+    const minOffset = centerOffset - (cycleHeight * (this.baseCycleIndex + 2));
+
+    if (nextOffset < minOffset) {
+      return nextOffset + cycleHeight;
+    }
+
+    return nextOffset;
+  }
+
+  private finishSpin(): void {
+    if (!this.spinning) {
+      return;
+    }
+
+    this.stopAnimation();
+    this.clearAutoStopTimers();
+    this.spinning = false;
+    this.gameStateService.setWheelSpinning(false);
+    this.selectedItemEvent.emit(this.winningNumber);
+  }
+
+  private buildReels(): void {
+    const translated = this.items.map(item => ({
+      text: item.text,
+      translatedText: this.translateService.instant(item.text),
+      fillStyle: item.fillStyle,
+      weight: item.weight,
+      spriteUrl: this.resolveSpriteUrl(item)
+    }));
+
+    const buildStrip = (baseItems: ReelItem[]): ReelItem[] => {
+      const strip: ReelItem[] = [];
+
+      for (let cycle = 0; cycle < 8; cycle++) {
+        for (const item of baseItems) {
+          strip.push({ ...item });
+        }
+      }
+
+      return strip;
+    };
+
+    const shuffle = (items: ReelItem[]): ReelItem[] => {
+      const copy = [...items];
+
+      for (let index = copy.length - 1; index > 0; index--) {
+        const swapIndex = Math.floor(Math.random() * (index + 1));
+        [copy[index], copy[swapIndex]] = [copy[swapIndex], copy[index]];
+      }
+
+      return copy;
+    };
+
+    this.reelItems = buildStrip(translated);
+    this.reel2Items = buildStrip(shuffle(translated));
+    this.reel3Items = buildStrip(shuffle(translated));
+
+    const startOffset = this.getCenterOffset() - (this.getCycleHeight() * this.baseCycleIndex);
+    this.reel1Offset = startOffset;
+    this.reel2Offset = startOffset;
+    this.reel3Offset = startOffset;
+  }
+
+  private resolveSpriteUrl(item: WheelItem): string | null {
+    const spriteLikeItem = item as SpriteLikeItem;
+
+    if (typeof spriteLikeItem.sprite === 'string' && spriteLikeItem.sprite.trim().length > 0) {
+      return spriteLikeItem.sprite;
+    }
+
+    if (spriteLikeItem.sprite && typeof spriteLikeItem.sprite === 'object') {
+      if (spriteLikeItem.shiny && spriteLikeItem.sprite.front_shiny) {
+        return spriteLikeItem.sprite.front_shiny;
+      }
+
+      return spriteLikeItem.sprite.front_default ?? spriteLikeItem.sprite.front_shiny ?? null;
+    }
+
+    if (typeof spriteLikeItem.pokemonId === 'number') {
+      const spriteFolder = spriteLikeItem.shiny ? 'shiny' : 'pokemon';
+      return `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/${spriteFolder}/${spriteLikeItem.pokemonId}.png`;
+    }
+
+    return null;
+  }
+
+  private getStopOffset(reelItems: ReelItem[], currentOffset: number, winningText: string): number {
+    const centerOffset = this.getCenterOffset();
+    const offsets = reelItems
+      .map((item, index) => item.text === winningText ? -(index * this.itemHeight) + centerOffset : null)
+      .filter((offset): offset is number => offset !== null);
+
+    const forwardCandidate = offsets
+      .filter(offset => offset <= currentOffset + (this.itemHeight / 2))
+      .sort((left, right) => right - left)[0];
+
+    return forwardCandidate ?? offsets[offsets.length - 1] ?? currentOffset;
+  }
+
+  private getReelSet(reelIndex: number): ReelItem[] {
+    return reelIndex === 0 ? this.reelItems : reelIndex === 1 ? this.reel2Items : this.reel3Items;
+  }
+
+  private getReelOffset(reelIndex: number): number {
+    return reelIndex === 0 ? this.reel1Offset : reelIndex === 1 ? this.reel2Offset : this.reel3Offset;
+  }
+
+  private setReelOffset(reelIndex: number, offset: number): void {
+    if (reelIndex === 0) {
+      this.reel1Offset = offset;
+    } else if (reelIndex === 1) {
+      this.reel2Offset = offset;
+    } else {
+      this.reel3Offset = offset;
+    }
+  }
+
+  private getCenterOffset(): number {
+    return (this.getReelHeight() / 2) - (this.itemHeight / 2);
+  }
+
+  private getCycleHeight(): number {
+    return Math.max(1, this.items.length) * this.itemHeight;
+  }
+
+  private getReelHeight(): number {
+    return window.innerWidth <= 768 ? 240 : 300;
+  }
+
+  private stopAnimation(): void {
+    if (this.animationFrameId !== null) {
+      cancelAnimationFrame(this.animationFrameId);
+      this.animationFrameId = null;
+    }
+  }
+
+  private clearAutoStopTimer(reelIndex: number): void {
+    const timer = this.autoStopTimers[reelIndex];
+
+    if (timer) {
+      clearTimeout(timer);
+      this.autoStopTimers[reelIndex] = null;
+    }
+  }
+
+  private clearAutoStopTimers(): void {
+    this.autoStopTimers.forEach((_, reelIndex) => this.clearAutoStopTimer(reelIndex));
+  }
+
+  private getRandomWeightedIndex(): number {
+    const totalWeight = this.items.reduce((sum, item) => sum + item.weight, 0);
+    let random = Math.random() * totalWeight;
+    let accumulatedWeight = 0;
+
+    for (let index = 0; index < this.items.length; index++) {
+      accumulatedWeight += this.items[index].weight;
+      if (random < accumulatedWeight) {
+        return index;
+      }
+    }
+
+    return this.items.length - 1;
+  }
+
+  private updateStatusPanel(): void {
+    const status = this.getProjectedStatus();
+    this.derivedPrimaryLabel = status.primaryLabel;
+    this.derivedPrimaryValue = status.primaryValue;
+    this.derivedSecondaryValue = status.secondaryValue;
+  }
+
+  private getProjectedStatus(): { primaryLabel: string; primaryValue: string; secondaryValue: string } {
+    if (this.currentGameState === 'game-start' || this.currentGameState === 'character-select') {
+      return { primaryLabel: 'GYM', primaryValue: '---', secondaryValue: '--' };
+    }
+
+    if (this.currentGameState === 'champion-battle') {
+      return {
+        primaryLabel: 'BOSS',
+        primaryValue: 'CHAMPION',
+        secondaryValue: `${getPowerBattleSummary(
+          this.trainerTeam,
+          this.trainerItems,
+          getChampionDifficulty(this.currentRound)
+        ).winPercent}%`
+      };
+    }
+
+    if (this.currentRound >= 8) {
+      return {
+        primaryLabel: 'BOSS',
+        primaryValue: 'ELITE 4',
+        secondaryValue: `${getPowerBattleSummary(
+          this.trainerTeam,
+          this.trainerItems,
+          getEliteDifficulty(this.currentRound)
+        ).winPercent}%`
+      };
+    }
+
+    if (!this.currentGeneration) {
+      return { primaryLabel: 'GYM', primaryValue: '---', secondaryValue: '--' };
+    }
+
+    const leaderType = gymLeaderTypesByGeneration[this.currentGeneration.id][this.currentRound];
+
+    if (!leaderType) {
+      return { primaryLabel: 'GYM', primaryValue: '---', secondaryValue: '--' };
+    }
+
+    const leaderTypes = Array.isArray(leaderType) ? leaderType : [leaderType];
+    const averageWinPercent = Math.round(
+      leaderTypes.reduce((sum, type) => {
+        return sum + getGymBattleSummary(this.trainerTeam, this.trainerItems, type).winPercent;
+      }, 0) / leaderTypes.length
+    );
+
+    return {
+      primaryLabel: 'GYM',
+      primaryValue: this.formatGymValue(leaderType),
+      secondaryValue: `${averageWinPercent}%`
+    };
+  }
+
+  private formatGymValue(leaderType: GymLeaderType): string {
+    const leaderTypes = Array.isArray(leaderType) ? leaderType : [leaderType];
+
+    if (leaderTypes.length === 1) {
+      return leaderTypes[0].toUpperCase();
+    }
+
+    return leaderTypes.map(type => this.getTypeAbbreviation(type)).join('/');
+  }
+
+  private getTypeAbbreviation(type: PokemonType): string {
+    return type.slice(0, 3).toUpperCase();
   }
 }

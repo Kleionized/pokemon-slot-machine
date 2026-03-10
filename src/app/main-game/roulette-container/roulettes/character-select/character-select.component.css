@@ -22,13 +22,12 @@
     text-decoration: none;
     color: inherit;
     padding: 1rem;
-    border-radius: 16px;
     transition: transform 0.2s ease, background 0.2s ease;
 }
 
 .trainer-option:hover {
     transform: scale(1.05);
-    background: rgba(255, 203, 5, 0.1);
+    background: rgba(168, 160, 68, 0.2);
 }
 
 .trainer-option p {

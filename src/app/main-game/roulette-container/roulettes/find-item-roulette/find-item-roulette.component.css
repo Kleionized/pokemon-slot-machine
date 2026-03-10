@@ -7,7 +7,7 @@
 }
 
 .modal-body {
-    color: #2d3436;
+    color: #000;
     text-align: center;
 }
 
@@ -28,13 +28,12 @@
     cursor: default;
     font-size: 8.6px;
     font-family: "Pokemon GB", Monospace, sans-serif;
-    border-radius: 12px;
     padding: 12px;
     position: relative;
     line-height: 16px;
-    background: linear-gradient(135deg, #f8f9fa, #e9ecef);
-    border: 2px solid rgba(59, 76, 202, 0.2);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    background: #fff;
+    border: 3px solid #000;
+    box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.3);
     user-select: none;
     max-width: 50%;
 }

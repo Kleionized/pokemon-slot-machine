@@ -1,112 +1,256 @@
-.slot-machine-container {
+:host {
+    display: block;
+    width: min(100%, 840px);
+}
+
+.cabinet-shell {
+    position: relative;
+    width: 100%;
+    background: #c2b84f;
+    border: 4px solid #000;
+    box-shadow: inset 0 0 0 4px #e0da8d;
+    overflow: hidden;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 1.25rem;
+    padding: 1.5rem 1.1rem 1.25rem;
+    box-sizing: border-box;
+    image-rendering: pixelated;
 }
 
-.current-segment {
-    font-size: 1.4em;
-    font-weight: bold;
-    text-align: center;
-    min-height: 2.2em;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0.6rem 1.8rem;
-    border-radius: 14px;
-    background: linear-gradient(135deg, rgba(255, 203, 5, 0.15), rgba(0, 117, 190, 0.1));
-    border: 2px solid rgba(255, 203, 5, 0.3);
-    max-width: 90%;
-    word-break: break-word;
-}
-
-.slot-machine {
-    position: relative;
-}
-
-.slot-frame {
-    position: relative;
-    background: linear-gradient(180deg, #1a1a2e 0%, #16213e 50%, #1a1a2e 100%);
-    border-radius: 22px;
-    padding: 24px 20px;
-    border: 5px solid #ffcb05;
-    box-shadow:
-        0 0 24px rgba(255, 203, 5, 0.3),
-        inset 0 0 36px rgba(0, 0, 0, 0.5),
-        0 10px 40px rgba(0, 0, 0, 0.4);
-}
-
-.slot-machine.dark .slot-frame {
-    border-color: #3b4cca;
-    box-shadow:
-        0 0 24px rgba(59, 76, 202, 0.3),
-        inset 0 0 36px rgba(0, 0, 0, 0.5),
-        0 10px 40px rgba(0, 0, 0, 0.4);
-}
-
-.slot-decorations {
+.bg-lines {
     position: absolute;
-    top: -16px;
-    left: 0;
-    right: 0;
-    display: flex;
-    justify-content: space-between;
-    padding: 0 24px;
+    inset: 0;
+    z-index: 0;
     pointer-events: none;
-    z-index: 5;
 }
 
-.pokeball-decoration {
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    background: radial-gradient(circle at 50% 50%,
-        #fff 30%, #333 31%, #333 34%, #ff1744 35%, #cc0000 100%);
-    border: 2px solid #333;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
+.line {
+    position: absolute;
+    width: 100%;
+    height: 4px;
+    background-color: #a8a044;
 }
 
-.slot-reels {
+.header,
+.main-area,
+.footer {
+    position: relative;
+    z-index: 1;
+}
+
+.header {
     display: flex;
-    align-items: center;
-    gap: 0;
+    gap: 1.25rem;
+    margin-bottom: 1.5rem;
+    flex-wrap: nowrap;
+    justify-content: center;
+    width: 100%;
 }
 
-.reel-wrapper {
+.display-box {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
     flex: 1;
+    max-width: 230px;
     min-width: 0;
 }
 
-.reel-window {
-    height: 270px;
-    overflow: hidden;
-    position: relative;
-    background: linear-gradient(180deg, #0d1b2a 0%, #1b2838 50%, #0d1b2a 100%);
-    border-radius: 12px;
-    border: 2px solid #2a2a4a;
-    box-shadow: inset 0 0 24px rgba(0, 0, 0, 0.8);
+.label {
+    background: #000;
+    color: #fff;
+    padding: 0.55rem 0;
+    font-size: 0.9rem;
+    border: 4px solid #000;
+    line-height: 1;
+    width: 100%;
+    text-align: center;
+    box-sizing: border-box;
+    letter-spacing: 0.08em;
 }
 
-.reel-window::before,
-.reel-window::after {
-    content: '';
+.value {
+    background: #fff;
+    color: #000;
+    font-size: clamp(1rem, 2.2vw, 1.45rem);
+    padding: 0.55rem 0.35rem;
+    border: 4px solid #000;
+    margin-top: -4px;
+    width: 100%;
+    text-align: center;
+    box-sizing: border-box;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.main-area {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+    align-items: center;
+    gap: 0.85rem;
+}
+
+.indicators {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    flex-shrink: 0;
+}
+
+.indicator-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.hex-wrapper {
+    position: relative;
+    width: 48px;
+    height: 38px;
+}
+
+.hex-border {
+    position: absolute;
+    inset: 0;
+    background: #000;
+    clip-path: polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%);
+}
+
+.hex-inner {
+    position: absolute;
+    inset: 3px;
+    clip-path: polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 1rem;
+    -webkit-text-stroke: 1.5px #000;
+    paint-order: stroke fill;
+}
+
+.light {
+    width: 18px;
+    height: 26px;
+    background-color: #b33;
+    border: 3px solid #000;
+    border-radius: 50%;
+    position: relative;
+    box-shadow: inset -2px -2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.light.active {
+    background-color: #ff3333;
+    box-shadow: 0 0 10px #ff3333, inset -2px -2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.glare {
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 4px;
+    height: 6px;
+    background: rgba(255, 255, 255, 0.8);
+    border-radius: 50%;
+}
+
+.center-console {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.65rem;
+    min-width: 0;
+}
+
+.spin-instruction {
+    font-size: 0.7rem;
+    letter-spacing: 0.08em;
+    text-align: center;
+    color: rgba(0, 0, 0, 0.85);
+    min-height: 1rem;
+}
+
+.reels-wrapper {
+    position: relative;
+    background: #a59c3f;
+    border: 6px solid #000;
+    display: flex;
+    cursor: pointer;
+    box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.5);
+    overflow: hidden;
+    width: min(100%, 520px);
+}
+
+.reels-wrapper.is-spinning {
+    box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.5), 0 0 0 3px rgba(255, 255, 255, 0.2);
+}
+
+.paylines {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+}
+
+.payline {
     position: absolute;
     left: 0;
     right: 0;
-    height: 40%;
-    z-index: 2;
-    pointer-events: none;
+    height: 6px;
+    border-top: 2px solid rgba(255, 255, 255, 0.8);
+    border-bottom: 2px solid rgba(255, 255, 255, 0.8);
+    box-shadow: 0 -4px 0 currentColor, 0 4px 0 currentColor;
 }
 
-.reel-window::before {
-    top: 0;
-    background: linear-gradient(to bottom, rgba(13, 27, 42, 0.95), transparent);
+.payline.h-top {
+    top: 100px;
+    transform: translateY(-50%);
 }
 
-.reel-window::after {
-    bottom: 0;
-    background: linear-gradient(to top, rgba(13, 27, 42, 0.95), transparent);
+.payline.h-mid {
+    top: 150px;
+    transform: translateY(-50%);
+}
+
+.payline.h-bot {
+    top: 200px;
+    transform: translateY(-50%);
+}
+
+.payline.d-1,
+.payline.d-2 {
+    top: 150px;
+    left: -10%;
+    width: 120%;
+    transform-origin: center;
+}
+
+.payline.d-1 {
+    transform: translateY(-50%) rotate(24deg);
+}
+
+.payline.d-2 {
+    transform: translateY(-50%) rotate(-24deg);
+}
+
+.reels-grid {
+    display: flex;
+    gap: 20px;
+    padding: 0 20px;
+    position: relative;
+    z-index: 1;
+}
+
+.reel-column {
+    width: 140px;
+    height: 300px;
+    background: #fff;
+    border-left: 4px solid #000;
+    border-right: 4px solid #000;
+    overflow: hidden;
+    position: relative;
 }
 
 .reel-strip {
@@ -115,145 +259,198 @@
 }
 
 .reel-item {
-    height: 90px;
+    height: 100px;
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding: 6px 8px;
+    gap: 0.35rem;
+    padding: 0.35rem;
     box-sizing: border-box;
 }
 
-.reel-item span {
+.symbol-sprite {
+    width: 72px;
+    height: 72px;
+    object-fit: contain;
+    image-rendering: pixelated;
+}
+
+.symbol-caption,
+.symbol-fallback {
+    max-width: 92%;
     color: #fff;
-    font-size: 13px;
-    font-weight: bold;
+    padding: 0.2rem 0.35rem;
+    font-size: 0.52rem;
+    line-height: 1.25;
     text-align: center;
-    text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.8);
-    line-height: 1.3;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    display: -webkit-box;
-    -webkit-line-clamp: 3;
-    -webkit-box-orient: vertical;
-    word-break: break-word;
-}
-
-.reel-divider {
-    width: 3px;
-    height: 270px;
-    background: linear-gradient(180deg, transparent, #ffcb05, transparent);
-    flex-shrink: 0;
-}
-
-.slot-machine.dark .reel-divider {
-    background: linear-gradient(180deg, transparent, #3b4cca, transparent);
-}
-
-.win-line {
-    position: absolute;
-    left: 12px;
-    right: 12px;
-    top: 50%;
-    transform: translateY(-50%);
-    height: 3px;
-    background: linear-gradient(90deg, transparent, #ff1744, #ffcb05, #ff1744, transparent);
-    z-index: 3;
-    border-radius: 2px;
-    box-shadow: 0 0 12px rgba(255, 23, 68, 0.5);
-    pointer-events: none;
-}
-
-.slot-lever-btn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.6rem;
-    padding: 14px 40px;
-    border: 3px solid #ffcb05;
-    border-radius: 50px;
-    background: linear-gradient(135deg, #ff1744, #d50000);
-    color: #fff;
-    font-family: inherit;
-    font-size: 1.15rem;
-    font-weight: bold;
-    cursor: pointer;
+    border: 2px solid #000;
+    box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.4);
     text-transform: uppercase;
-    letter-spacing: 2px;
-    box-shadow:
-        0 4px 18px rgba(255, 23, 68, 0.4),
-        0 2px 6px rgba(0, 0, 0, 0.2);
-    transition: all 0.2s ease;
 }
 
-.slot-lever-btn:hover:not(.spinning) {
-    transform: translateY(-2px);
-    box-shadow:
-        0 6px 24px rgba(255, 23, 68, 0.5),
-        0 4px 10px rgba(0, 0, 0, 0.3);
+.symbol-fallback {
+    min-width: 80%;
 }
 
-.slot-lever-btn:active:not(.spinning) {
-    transform: translateY(1px);
+.blur {
+    filter: blur(1.2px);
+    opacity: 0.82;
 }
 
-.slot-lever-btn.spinning {
-    opacity: 0.6;
-    cursor: not-allowed;
+.footer {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-top: 1.5rem;
 }
 
-.slot-lever-btn.dark {
-    background: linear-gradient(135deg, #3b4cca, #2a3ab1);
-    border-color: #ffcb05;
-    box-shadow:
-        0 4px 18px rgba(59, 76, 202, 0.4),
-        0 2px 6px rgba(0, 0, 0, 0.2);
+.stop-lines {
+    flex: 1;
+    height: 12px;
+    background: repeating-linear-gradient(
+        to bottom,
+        #a8a044,
+        #a8a044 2px,
+        transparent 2px,
+        transparent 6px
+    );
 }
 
-.slot-lever-btn.dark:hover:not(.spinning) {
-    box-shadow:
-        0 6px 24px rgba(59, 76, 202, 0.5),
-        0 4px 10px rgba(0, 0, 0, 0.3);
+.stop-buttons {
+    display: flex;
+    gap: 6rem;
+    padding: 0 1rem;
 }
 
-.lever-icon {
-    font-size: 0.9em;
+.btn-container {
+    background: #000;
+    padding: 4px;
 }
 
-/* Responsive sizing */
+.stop-btn {
+    width: 36px;
+    height: 36px;
+    background-color: #8db5e7;
+    border: 3px solid #fff;
+    box-shadow: inset -4px -4px 0 rgba(0, 0, 0, 0.3);
+    cursor: pointer;
+    outline: none;
+}
+
+.stop-btn:hover:not(:disabled) {
+    background-color: #a4c5f0;
+}
+
+.stop-btn:disabled {
+    cursor: default;
+}
+
+.stop-btn:active:not(:disabled),
+.stop-btn.pressed {
+    box-shadow: inset 4px 4px 0 rgba(0, 0, 0, 0.5);
+    background-color: #7a9cc9;
+}
+
+@media (max-width: 900px) {
+    .cabinet-shell {
+        padding: 1.2rem 0.85rem 1rem;
+    }
+
+    .main-area {
+        gap: 0.5rem;
+    }
+
+    .indicator-row {
+        gap: 0.5rem;
+    }
+
+    .reels-wrapper {
+        width: 100%;
+    }
+
+    .reels-grid {
+        gap: 12px;
+        padding: 0 12px;
+    }
+
+    .reel-column {
+        width: 110px;
+    }
+
+    .stop-buttons {
+        gap: 4rem;
+    }
+}
+
 @media (max-width: 768px) {
-    .reel-window {
-        height: 225px;
+    .header {
+        gap: 0.85rem;
+        margin-bottom: 1rem;
+    }
+
+    .display-box {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .main-area {
+        align-items: stretch;
+    }
+
+    .indicators {
+        display: none;
+    }
+
+    .spin-instruction {
+        font-size: 0.56rem;
+    }
+
+    .reel-column {
+        width: 86px;
+        height: 240px;
     }
 
     .reel-item {
-        height: 75px;
+        height: 80px;
+        gap: 0.2rem;
     }
 
-    .reel-divider {
-        height: 225px;
+    .symbol-sprite {
+        width: 54px;
+        height: 54px;
     }
 
-    .reel-item span {
-        font-size: 11px;
+    .symbol-caption,
+    .symbol-fallback {
+        font-size: 0.42rem;
+        padding: 0.15rem 0.25rem;
     }
 
-    .slot-frame {
-        padding: 18px 12px;
-        border-radius: 18px;
+    .payline.h-top {
+        top: 80px;
     }
 
-    .slot-lever-btn {
-        padding: 12px 28px;
-        font-size: 1rem;
+    .payline.h-mid {
+        top: 120px;
     }
 
-    .current-segment {
-        font-size: 1.2em;
+    .payline.h-bot {
+        top: 160px;
     }
-}
 
-@media (min-width: 769px) {
-    .reel-window {
-        width: 160px;
+    .payline.d-1,
+    .payline.d-2 {
+        top: 120px;
+    }
+
+    .stop-buttons {
+        gap: 2rem;
+    }
+
+    .stop-btn {
+        width: 30px;
+        height: 30px;
     }
 }

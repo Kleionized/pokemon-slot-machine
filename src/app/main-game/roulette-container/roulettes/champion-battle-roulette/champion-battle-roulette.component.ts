@@ -13,7 +13,7 @@ import { PokemonItem } from '../../../../interfaces/pokemon-item';
 import { ItemItem } from '../../../../interfaces/item-item';
 import { WheelItem } from '../../../../interfaces/wheel-item';
 import { GymLeader } from '../../../../interfaces/gym-leader';
-import { interleaveOdds } from '../../../../utils/odd-utils';
+import { buildPowerVictoryOdds, getChampionDifficulty, getPowerBattleSummary, getXAttackBonus } from '../../../../utils/battle-odds';
 
 @Component({
   selector: 'app-champion-battle-roulette',
@@ -55,6 +55,7 @@ export class ChampionBattleRouletteComponent implements OnInit, OnDestroy {
   ];
 
   currentChampion: GymLeader = { name: '', sprite: '', quotes: [''] };
+  currentWinPercent = 50;
   currentItem!: ItemItem;
   retries = 0;
   private teamSubscription!: Subscription;
@@ -113,43 +114,26 @@ export class ChampionBattleRouletteComponent implements OnInit, OnDestroy {
   }
 
   private calcVictoryOdds(): void {
-    const yesOdds: WheelItem[] = [];
-    const noOdds: WheelItem[] = [];
-
-    yesOdds.push({ text: "game.main.roulette.champion.yes", fillStyle: "green", weight: 1 });
-
-    this.trainerTeam.forEach(pokemon => {
-      for (let i = 0; i < pokemon.power; i++) {
-        yesOdds.push({ text: "game.main.roulette.champion.yes", fillStyle: "green", weight: 1 });
-      }
-    });
-
-    const powerModifier = this.plusModifiers();
-  
-    for (let i = 0; i < powerModifier; i++) {
-      yesOdds.push({ text: "game.main.roulette.champion.yes", fillStyle: "green", weight: 1 });
-    }
-
-    for (let index = 0; index < this.getChampionDifficulty(); index++) {
-      noOdds.push({ text: "game.main.roulette.champion.no", fillStyle: "crimson", weight: 1 });
-    }
-
-    this.victoryOdds = interleaveOdds(yesOdds, noOdds);
+    this.victoryOdds = buildPowerVictoryOdds(
+      this.trainerTeam,
+      this.trainerItems,
+      this.getChampionDifficulty(),
+      "game.main.roulette.champion.yes",
+      "game.main.roulette.champion.no"
+    );
+    this.currentWinPercent = getPowerBattleSummary(
+      this.trainerTeam,
+      this.trainerItems,
+      this.getChampionDifficulty()
+    ).winPercent;
   }
 
   private plusModifiers(): number {
-    let power = 0;
-    const xAttacks = this.trainerItems.filter(item => item.name === 'x-attack');
-    xAttacks.forEach(() => {
-      const meanPower = this.trainerTeam.reduce((sum, pokemon) => sum + pokemon.power, 0) / this.trainerTeam.length;
-      power += meanPower;
-    });
-
-    return power;
+    return getXAttackBonus(this.trainerTeam, this.trainerItems);
   }
 
   private getChampionDifficulty(): number {
-    return Math.ceil((this.currentRound + 1) * 2.25) + 4;
+    return getChampionDifficulty(this.currentRound);
   }
 
   private getCurrentChampion(): void {
