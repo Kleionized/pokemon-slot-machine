@@ -81,7 +81,7 @@ export class WheelComponent implements OnInit, OnChanges, OnDestroy {
   private reelDecelStart: number[] = [0, 0, 0];
   private reelDecelFrom: number[] = [0, 0, 0];
   private reelDecelTo: number[] = [0, 0, 0];
-  private readonly decelDuration = 400; // ms for smooth stop
+  private reelDecelDuration: number[] = [0, 0, 0];
   private subscriptions: Subscription[] = [];
   private trainerItems: ItemItem[] = [];
   private trainerTeam: PokemonItem[] = [];
@@ -163,6 +163,7 @@ export class WheelComponent implements OnInit, OnChanges, OnDestroy {
     this.resultMessage = '';
     this.reelSpinStates = [true, true, true];
     this.reelDecelerating = [false, false, false];
+    this.reelDecelDuration = [0, 0, 0];
     this.gameStateService.setWheelSpinning(true);
     this.winningNumber = this.getRandomWeightedIndex();
     this.lastFrameTime = performance.now();
@@ -185,12 +186,16 @@ export class WheelComponent implements OnInit, OnChanges, OnDestroy {
     const currentOffset = this.getReelOffset(reelIndex);
     const targetOffset = this.getStopOffset(reelItems, currentOffset, winningItem.text);
 
-    // Start smooth deceleration instead of snapping
+    // Scale deceleration duration: longer distance = longer animation
+    const distance = Math.abs(currentOffset - targetOffset);
+    const duration = Math.min(800, Math.max(350, distance * 0.6));
+
     this.reelSpinStates[reelIndex] = false;
     this.reelDecelerating[reelIndex] = true;
     this.reelDecelStart[reelIndex] = performance.now();
     this.reelDecelFrom[reelIndex] = currentOffset;
     this.reelDecelTo[reelIndex] = targetOffset;
+    this.reelDecelDuration[reelIndex] = duration;
     this.audioService.playAudio(this.clickAudio, 0.85);
   }
 
@@ -272,7 +277,7 @@ export class WheelComponent implements OnInit, OnChanges, OnDestroy {
     for (let i = 0; i < 3; i++) {
       if (this.reelDecelerating[i]) {
         const elapsed = currentTime - this.reelDecelStart[i];
-        const progress = Math.min(elapsed / this.decelDuration, 1);
+        const progress = Math.min(elapsed / this.reelDecelDuration[i], 1);
         // Ease-out cubic
         const eased = 1 - Math.pow(1 - progress, 3);
         const from = this.reelDecelFrom[i];
@@ -405,15 +410,27 @@ export class WheelComponent implements OnInit, OnChanges, OnDestroy {
 
   private getStopOffset(reelItems: ReelItem[], currentOffset: number, winningText: string): number {
     const centerOffset = this.getCenterOffset();
+    const minScrollDistance = this.itemHeight * 3; // Must scroll at least 3 items
+
     const offsets = reelItems
       .map((item, index) => item.text === winningText ? -(index * this.itemHeight) + centerOffset : null)
       .filter((offset): offset is number => offset !== null);
 
-    const forwardCandidate = offsets
-      .filter(offset => offset <= currentOffset + (this.itemHeight / 2))
-      .sort((left, right) => right - left)[0];
+    // Find candidates that are below current position by at least minScrollDistance
+    const goodCandidates = offsets
+      .filter(offset => offset <= currentOffset - minScrollDistance)
+      .sort((left, right) => right - left);
 
-    return forwardCandidate ?? offsets[offsets.length - 1] ?? currentOffset;
+    if (goodCandidates.length > 0) {
+      return goodCandidates[0];
+    }
+
+    // Fallback: pick closest one that's at least slightly below
+    const anyCandidates = offsets
+      .filter(offset => offset <= currentOffset + (this.itemHeight / 2))
+      .sort((left, right) => right - left);
+
+    return anyCandidates[0] ?? offsets[offsets.length - 1] ?? currentOffset;
   }
 
   private getReelSet(reelIndex: number): ReelItem[] {
