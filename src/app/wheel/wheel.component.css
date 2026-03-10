@@ -173,6 +173,13 @@
     min-height: 1rem;
 }
 
+.result-msg {
+    color: #000;
+    font-weight: bold;
+    font-size: 0.65rem;
+    letter-spacing: 0.05em;
+}
+
 .reels-wrapper {
     position: relative;
     background: #a59c3f;
@@ -270,15 +277,15 @@
 }
 
 .symbol-sprite {
-    width: 72px;
-    height: 72px;
+    width: 88px;
+    height: 88px;
     object-fit: contain;
     image-rendering: pixelated;
 }
 
-.symbol-caption,
 .symbol-fallback {
     max-width: 92%;
+    min-width: 80%;
     color: #fff;
     padding: 0.2rem 0.35rem;
     font-size: 0.52rem;
@@ -287,10 +294,6 @@
     border: 2px solid #000;
     box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.4);
     text-transform: uppercase;
-}
-
-.symbol-fallback {
-    min-width: 80%;
 }
 
 .blur {
@@ -418,11 +421,10 @@
     }
 
     .symbol-sprite {
-        width: 54px;
-        height: 54px;
+        width: 68px;
+        height: 68px;
     }
 
-    .symbol-caption,
     .symbol-fallback {
         font-size: 0.42rem;
         padding: 0.15rem 0.25rem;

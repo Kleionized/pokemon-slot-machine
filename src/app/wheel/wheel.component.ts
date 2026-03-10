@@ -46,6 +46,8 @@ export class WheelComponent implements OnInit, OnChanges, OnDestroy {
   @Input() statusSecondaryValue?: number | string | null;
   @Output() selectedItemEvent = new EventEmitter<number>();
 
+  resultMessage = '';
+
   readonly indicators = [
     { num: 3, color: '#39ff14' },
     { num: 2, color: '#ffcc00' },
@@ -85,7 +87,7 @@ export class WheelComponent implements OnInit, OnChanges, OnDestroy {
   private trainerTeam: PokemonItem[] = [];
   private winningNumber = -1;
 
-  private derivedPrimaryLabel = 'GYM';
+  private derivedPrimaryLabel = 'NEXT GYM';
   private derivedPrimaryValue = '---';
   private derivedSecondaryValue = '--';
 
@@ -158,6 +160,7 @@ export class WheelComponent implements OnInit, OnChanges, OnDestroy {
     this.clearAutoStopTimers();
 
     this.spinning = true;
+    this.resultMessage = '';
     this.reelSpinStates = [true, true, true];
     this.reelDecelerating = [false, false, false];
     this.gameStateService.setWheelSpinning(true);
@@ -166,8 +169,8 @@ export class WheelComponent implements OnInit, OnChanges, OnDestroy {
     this.animationFrameId = requestAnimationFrame(this.animate.bind(this));
 
     this.autoStopTimers[0] = setTimeout(() => this.stopReel(0), 1600);
-    this.autoStopTimers[1] = setTimeout(() => this.stopReel(1), 2400);
-    this.autoStopTimers[2] = setTimeout(() => this.stopReel(2), 3200);
+    this.autoStopTimers[1] = setTimeout(() => this.stopReel(1), 1900);
+    this.autoStopTimers[2] = setTimeout(() => this.stopReel(2), 2200);
   }
 
   stopReel(reelIndex: number): void {
@@ -323,7 +326,16 @@ export class WheelComponent implements OnInit, OnChanges, OnDestroy {
     this.clearAutoStopTimers();
     this.spinning = false;
     this.gameStateService.setWheelSpinning(false);
-    this.selectedItemEvent.emit(this.winningNumber);
+
+    // Generate result message and pause 500ms before emitting
+    if (this.winningNumber >= 0 && this.winningNumber < this.items.length) {
+      this.resultMessage = this.generateResultMessage(this.items[this.winningNumber]);
+    }
+
+    setTimeout(() => {
+      this.resultMessage = '';
+      this.selectedItemEvent.emit(this.winningNumber);
+    }, 500);
   }
 
   private buildReels(): void {
@@ -478,7 +490,7 @@ export class WheelComponent implements OnInit, OnChanges, OnDestroy {
 
   private getProjectedStatus(): { primaryLabel: string; primaryValue: string; secondaryValue: string } {
     if (this.currentGameState === 'game-start' || this.currentGameState === 'character-select') {
-      return { primaryLabel: 'GYM', primaryValue: '---', secondaryValue: '--' };
+      return { primaryLabel: 'NEXT GYM', primaryValue: '---', secondaryValue: '--' };
     }
 
     if (this.currentGameState === 'champion-battle') {
@@ -506,13 +518,13 @@ export class WheelComponent implements OnInit, OnChanges, OnDestroy {
     }
 
     if (!this.currentGeneration) {
-      return { primaryLabel: 'GYM', primaryValue: '---', secondaryValue: '--' };
+      return { primaryLabel: 'NEXT GYM', primaryValue: '---', secondaryValue: '--' };
     }
 
     const leaderType = gymLeaderTypesByGeneration[this.currentGeneration.id][this.currentRound];
 
     if (!leaderType) {
-      return { primaryLabel: 'GYM', primaryValue: '---', secondaryValue: '--' };
+      return { primaryLabel: 'NEXT GYM', primaryValue: '---', secondaryValue: '--' };
     }
 
     const leaderTypes = Array.isArray(leaderType) ? leaderType : [leaderType];
@@ -523,7 +535,7 @@ export class WheelComponent implements OnInit, OnChanges, OnDestroy {
     );
 
     return {
-      primaryLabel: 'GYM',
+      primaryLabel: 'NEXT GYM',
       primaryValue: this.formatGymValue(leaderType),
       secondaryValue: `${averageWinPercent}%`
     };
@@ -541,5 +553,115 @@ export class WheelComponent implements OnInit, OnChanges, OnDestroy {
 
   private getTypeAbbreviation(type: PokemonType): string {
     return type.slice(0, 3).toUpperCase();
+  }
+
+  private readonly npcNames = [
+    'Youngster Joey', 'Lass Jenny', 'Bug Catcher Wade', 'Hiker Marcos',
+    'Fisherman Ralph', 'Picnicker Liz', 'Camper Jeff', 'Beauty Nova',
+    'Swimmer Luis', 'Sailor Huey', 'Juggler Dalton', 'Psychic Cameron',
+    'Bird Keeper Toby', 'Ace Trainer Gwen', 'Cooltrainer Sam',
+    'Blackbelt Koichi', 'Gentleman Arthur', 'Scientist Ivan'
+  ];
+
+  private getRandomNpcName(): string {
+    return this.npcNames[Math.floor(Math.random() * this.npcNames.length)];
+  }
+
+  private generateResultMessage(item: WheelItem): string {
+    const translated = this.translateService.instant(item.text);
+
+    switch (this.currentGameState) {
+      case 'starter-pokemon':
+      case 'starter-companion-catch':
+      case 'catch-pokemon':
+      case 'catch-cave-pokemon':
+      case 'go-fishing':
+      case 'find-fossil':
+      case 'mysterious-egg':
+        return `You caught ${translated}!`;
+
+      case 'legendary-encounter':
+        return `A wild ${translated} appeared!`;
+
+      case 'catch-legendary':
+        if (item.text.includes('.yes')) {
+          return 'Gotcha! Legendary captured!';
+        }
+        return 'Oh no! It broke free...';
+
+      case 'gym-battle':
+        if (item.text.includes('.yes')) {
+          return `You defeated the Gym Leader!`;
+        }
+        return 'You lost the battle...';
+
+      case 'elite-four-battle':
+        if (item.text.includes('.yes')) {
+          return 'Elite Four member defeated!';
+        }
+        return 'You lost the battle...';
+
+      case 'champion-battle':
+        if (item.text.includes('.yes')) {
+          return 'You defeated the Champion!';
+        }
+        return 'You lost the battle...';
+
+      case 'battle-rival':
+        if (item.text.includes('.yes')) {
+          return 'You defeated your Rival!';
+        }
+        return 'Your Rival won this time...';
+
+      case 'check-shininess':
+        if (item.text.includes('.yes')) {
+          return 'It\'s shiny! Lucky!';
+        }
+        return 'Normal coloring.';
+
+      case 'check-evolution':
+        if (item.text.includes('.yes')) {
+          return 'Time to evolve!';
+        }
+        return 'No evolution this time.';
+
+      case 'team-rocket-encounter':
+        if (item.text.includes('steal')) {
+          return 'Team Rocket stole a Pokemon!';
+        }
+        if (item.text.includes('defeat')) {
+          return 'You defeated Team Rocket!';
+        }
+        return 'Team Rocket ran away!';
+
+      case 'snorlax-encounter':
+        if (item.text.includes('catch')) {
+          return 'You caught Snorlax!';
+        }
+        if (item.text.includes('defeat')) {
+          return `Defeated by ${this.getRandomNpcName()}!`;
+        }
+        return 'You ran away safely!';
+
+      case 'find-item':
+        return `You found ${translated}!`;
+
+      case 'trade-pokemon':
+        return `Trade for ${translated}!`;
+
+      case 'start-adventure':
+      case 'adventure-continues':
+      case 'explore-cave':
+      case 'elite-four-preparation':
+        return translated;
+
+      case 'select-from-pokemon-list':
+      case 'select-evolution':
+      case 'evolve-pokemon':
+        return `Selected ${translated}!`;
+
+      default:
+        return translated;
+    }
   }
 }

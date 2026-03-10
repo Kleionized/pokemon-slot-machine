@@ -34,7 +34,13 @@
         </div>
 
         <div class="center-console">
-            <div class="spin-instruction">{{ spinning ? 'STOP THE REELS' : 'CLICK CABINET OR PRESS SPACE' }}</div>
+            <div class="spin-instruction">
+                @if (resultMessage) {
+                    <span class="result-msg">{{ resultMessage }}</span>
+                } @else {
+                    {{ spinning ? 'STOP THE REELS' : 'CLICK CABINET OR PRESS SPACE' }}
+                }
+            </div>
             <div class="reels-wrapper" [class.is-spinning]="spinning" (click)="startSpin()">
                 <div class="paylines">
                     <div class="payline h-top" [style.background-color]="indicators[1].color" [style.color]="indicators[1].color"></div>
@@ -51,7 +57,6 @@
                                 <div class="reel-item" [class.blur]="isReelSpinning(0)">
                                     @if (item.spriteUrl) {
                                         <img class="symbol-sprite" [src]="item.spriteUrl" [alt]="item.translatedText">
-                                        <span class="symbol-caption" [style.background-color]="item.fillStyle">{{ item.translatedText }}</span>
                                     } @else {
                                         <span class="symbol-fallback" [style.background-color]="item.fillStyle">{{ item.translatedText }}</span>
                                     }
@@ -66,7 +71,6 @@
                                 <div class="reel-item" [class.blur]="isReelSpinning(1)">
                                     @if (item.spriteUrl) {
                                         <img class="symbol-sprite" [src]="item.spriteUrl" [alt]="item.translatedText">
-                                        <span class="symbol-caption" [style.background-color]="item.fillStyle">{{ item.translatedText }}</span>
                                     } @else {
                                         <span class="symbol-fallback" [style.background-color]="item.fillStyle">{{ item.translatedText }}</span>
                                     }
@@ -81,7 +85,6 @@
                                 <div class="reel-item" [class.blur]="isReelSpinning(2)">
                                     @if (item.spriteUrl) {
                                         <img class="symbol-sprite" [src]="item.spriteUrl" [alt]="item.translatedText">
-                                        <span class="symbol-caption" [style.background-color]="item.fillStyle">{{ item.translatedText }}</span>
                                     } @else {
                                         <span class="symbol-fallback" [style.background-color]="item.fillStyle">{{ item.translatedText }}</span>
                                     }
