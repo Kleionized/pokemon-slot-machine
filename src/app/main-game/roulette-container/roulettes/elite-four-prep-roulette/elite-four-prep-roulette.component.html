@@ -1,31 +1,56 @@
 <h1 class="title">Pokemart</h1>
-<p class="respin-reason">
-  You can reroll items a number of times equal to how many items you entered with.
-</p>
 
-@if (hasItemsToReroll) {
-  <p class="respin-reason">Rerolls remaining: {{ rerollsRemaining }}</p>
-  <div class="pokemart-grid">
-    @for (item of trainerItems; track item) {
-      <button
-        type="button"
-        class="pokemart-card"
-        [disabled]="hasFinishedRerolls()"
-        (click)="rerollItem(item)">
-        <img [src]="item.sprite" [alt]="item.text | translate" height="96">
-        <span>{{ item.text | translate }}</span>
-      </button>
-    }
+@if (hasItemsToReroll && !hasFinishedRerolls()) {
+  <p class="respin-reason">
+    Rerolls remaining: {{ rerollsRemaining }}
+  </p>
+  <p class="respin-reason sub">Spin to get a new random item!</p>
+  <app-wheel #wheel
+             [items]="rerollWheelItems"
+             (selectedItemEvent)="onRerollSpinResult($event)">
+  </app-wheel>
+
+  <div class="current-items">
+    <p class="items-label">Your Items:</p>
+    <div class="pokemart-grid">
+      @for (item of trainerItems; track item) {
+        <div class="pokemart-card">
+          <img [src]="item.sprite" [alt]="item.text | translate" height="64">
+          <span>{{ item.text | translate }}</span>
+        </div>
+      }
+    </div>
   </div>
-  <div class="pokemart-empty">
-    <button type="button" class="btn btn-outline-primary" (click)="leavePokemart()">
-      {{ hasFinishedRerolls() ? 'Continue' : 'Finish Shopping' }}
+
+  <div class="leave-section">
+    <button type="button" class="btn btn-outline-primary leave-btn" (click)="leavePokemart()">
+      Finish Shopping
+    </button>
+  </div>
+} @else if (hasItemsToReroll && hasFinishedRerolls()) {
+  <p class="respin-reason">All rerolls used!</p>
+  <div class="current-items">
+    <p class="items-label">Your Items:</p>
+    <div class="pokemart-grid">
+      @for (item of trainerItems; track item) {
+        <div class="pokemart-card">
+          <img [src]="item.sprite" [alt]="item.text | translate" height="64">
+          <span>{{ item.text | translate }}</span>
+        </div>
+      }
+    </div>
+  </div>
+  <div class="leave-section">
+    <button type="button" class="btn btn-outline-primary leave-btn" (click)="leavePokemart()">
+      Continue
     </button>
   </div>
 } @else {
   <div class="pokemart-empty">
     <p>No items to reroll.</p>
-    <button type="button" class="btn btn-outline-primary" (click)="leavePokemart()">Continue</button>
+  </div>
+  <div class="leave-section">
+    <button type="button" class="btn btn-outline-primary leave-btn" (click)="leavePokemart()">Continue</button>
   </div>
 }
 
@@ -39,8 +64,8 @@
             <div class="dialog">
                 <p>You made it through the gyms.</p>
                 <p>Before the Elite Four, visit the Pokemart.</p>
-                <p>You may reroll items up to the number of items you currently own.</p>
-                <p>Each reroll swaps the selected item for a different random item.</p>
+                <p>Spin the slot machine to reroll a random item from your bag!</p>
+                <p>Number of spins equals the number of items you have.</p>
             </div>
         </div>
     </div>

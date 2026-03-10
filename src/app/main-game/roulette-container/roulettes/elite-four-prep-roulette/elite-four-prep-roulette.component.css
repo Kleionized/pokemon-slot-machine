@@ -3,80 +3,151 @@
 }
 
 .respin-reason {
-	text-align: center;
+    text-align: center;
+    font-size: 0.85rem;
+    margin-bottom: 0.25rem;
+}
+
+.respin-reason.sub {
+    opacity: 0.7;
+    font-size: 0.75rem;
+    margin-bottom: 1rem;
+}
+
+.current-items {
+    margin-top: 1.5rem;
+    padding: 1rem;
+    border-radius: 14px;
+    background: rgba(0, 0, 0, 0.04);
+    border: 1px solid rgba(255, 203, 5, 0.2);
+}
+
+:host-context(body.dark-mode) .current-items {
+    background: rgba(255, 255, 255, 0.04);
+    border-color: rgba(59, 76, 202, 0.2);
+}
+
+.items-label {
+    text-align: center;
+    font-size: 0.8rem;
+    font-weight: bold;
+    margin-bottom: 0.75rem;
+    opacity: 0.8;
 }
 
 .pokemart-grid {
-	display: grid;
-	grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-	gap: 12px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+    gap: 10px;
 }
 
 .pokemart-card {
-	display: flex;
-	flex-direction: column;
-	align-items: center;
-	gap: 8px;
-	padding: 12px;
-	border: 1px solid #333;
-	border-radius: 8px;
-	background: rgba(255, 255, 255, 0.85);
-	cursor: pointer;
-	transition: transform 0.15s ease, box-shadow 0.15s ease;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 8px;
+    border: 2px solid rgba(255, 203, 5, 0.25);
+    border-radius: 12px;
+    background: linear-gradient(145deg, rgba(255, 255, 255, 0.9), rgba(240, 240, 240, 0.9));
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+:host-context(body.dark-mode) .pokemart-card {
+    background: linear-gradient(145deg, rgba(59, 76, 202, 0.15), rgba(26, 26, 46, 0.6));
+    border-color: rgba(59, 76, 202, 0.3);
 }
 
 .pokemart-card:hover {
-	transform: translateY(-2px);
-	box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(255, 203, 5, 0.2);
 }
 
 .pokemart-card span {
-	text-align: center;
-	font-weight: 600;
+    text-align: center;
+    font-weight: 600;
+    font-size: 0.65rem;
+    line-height: 1.2;
 }
 
 .pokemart-empty {
-	display: flex;
-	flex-direction: column;
-	align-items: center;
-	gap: 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    padding: 2rem 0;
 }
 
+.leave-section {
+    display: flex;
+    justify-content: center;
+    margin-top: 2.5rem;
+    padding-bottom: 1rem;
+}
+
+.leave-btn {
+    border-color: #3b4cca;
+    color: #3b4cca;
+    border-radius: 25px;
+    padding: 0.5rem 2.5rem;
+    font-family: inherit;
+    font-weight: bold;
+    font-size: 0.9rem;
+    transition: all 0.2s ease;
+}
+
+.leave-btn:hover {
+    background: #3b4cca;
+    color: #fff;
+    box-shadow: 0 4px 12px rgba(59, 76, 202, 0.3);
+}
 
 .modal-body {
-	color: black;
-	text-align: center;
+    color: #2d3436;
+    text-align: center;
+}
+
+.modal-body h1 {
+    font-size: 1rem;
+    background: linear-gradient(135deg, #3b4cca, #ff1744);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
 }
 
 .modal-body p {
-	font-size: medium;
+    font-size: medium;
 }
 
 .info-panel {
-	display: flex;
-	flex-direction: row;
-	align-items: center;
-	justify-content: center;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+}
+
+.info-panel img {
+    border-radius: 12px;
+    background: linear-gradient(135deg, rgba(255, 203, 5, 0.1), rgba(59, 76, 202, 0.1));
+    padding: 4px;
 }
 
 .dialog {
-	text-align: start;
-	cursor: default;
-	font-size: 8.6px;
-	border-radius: 2px;
-	padding: 8px;
-	position: relative;
-	line-height: 16px;
-	background: white;
-	border: 1px solid white;
-	box-shadow: 0 1px 0 1px black,
-		inset 0 1px 0 1px black,
-		0 0 0 1px black,
-		inset 0 0 0 1px black;
-	user-select: none;
-	max-width: 50%;
+    text-align: start;
+    cursor: default;
+    font-size: 8.6px;
+    border-radius: 12px;
+    padding: 12px;
+    position: relative;
+    line-height: 16px;
+    background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+    border: 2px solid rgba(59, 76, 202, 0.2);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    user-select: none;
+    max-width: 50%;
 }
 
 .modal-footer {
-	justify-content: center;
+    justify-content: center;
 }
